@@ -139,7 +139,7 @@ MathJax = {
       </div>
       <div class="markdown-body">
         <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>一次以前项目fastjson绕waf的记录</p>
-<h3 id="实操"><a href="#实操" class="headerlink" title="实操"></a>实操</h3><h4 id="大数据包"><a href="#大数据包" class="headerlink" title="大数据包"></a>大数据包</h4><p>fastjson默认开启<code>AllowComment</code>特性(PS:其他处理json的组件例如jackson，加入注释默认会抛出报错的，所以对于没有回显的json数据包，当加上注释时响应包状态码发生变化，比如正常的数据包响应是200，加上注释后响应500，则大概率服务器后端不是fastjson)，即默认支持在数据包中插入&#x2F;**&#x2F;注释，我们可以利用这一特性构造大数据包尝试绕waf。</p>
+<h3 id="实操"><a href="#实操" class="headerlink" title="实操"></a>实操</h3><h4 id="大数据包"><a href="#大数据包" class="headerlink" title="大数据包"></a>大数据包</h4><p>fastjson默认开启<code>AllowComment</code>特性，即默认支持在数据包中插入&#x2F;**/注释((PS:其他处理json的组件例如jackson，加入注释默认会抛出报错的，所以对于没有回显的json数据包，当加上注释时响应包状态码发生变化，比如正常的数据包响应是200，加上注释后响应500，则大概率服务器后端不是fastjson))，我们可以利用这一特性构造大数据包尝试绕waf。</p>
 <p>但这个点用&#x2F;**&#x2F;注释发大包失败,经测试大概在2M左右会触发中间件的错误,但2M的包是无法绕过waf的。</p>
 <h4 id="unicode-hex"><a href="#unicode-hex" class="headerlink" title="unicode+hex"></a>unicode+hex</h4><p>fastjson默认支持unicode编码和hex编码，尝试unicode+hex编码发poc,还是绕不过</p>
 <p><img src="/2022/04/15/%E4%B8%80%E6%AC%A1fastjson%E7%BB%95waf%E6%A1%88%E4%BE%8B/clip_image001.png" alt="img"></p>
