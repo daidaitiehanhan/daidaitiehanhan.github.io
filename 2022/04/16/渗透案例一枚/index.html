@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      渗透案例一枚 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">渗透案例一枚</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-16 23:10:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h3 id="遇到mssql注入"><a href="#遇到mssql注入" class="headerlink" title="遇到mssql注入"></a>遇到mssql注入</h3><p>某次项目遇到个站登陆口username参数存在注入，但是Admin账号不是管理员，且username限制了长度，这个注入点利用起来比较困难，因为猜不到高权限的用户名，万能密码也有劲使不出。</p>
+<p>爆破得到弱口令001&#x2F;123456,进后台没啥功能..</p>
+<p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416220726873.png" alt="image-20220416220726873"></p>
+<p>后面同事在后台看js找了个新的注入点，新的注入点没有长度限制，但是找不到密码表，用sqlmap的–search找不到可疑的表。尝试直接用注入点执行系统命令，当前权限是dba且是mssql数据库，尝试xp_cmdshell没反应，大概率是被杀软拦了。</p>
+<p>尝试用sp_oacreate执行<code>ping -n 10 xxx</code>发现响应时间明显变长，所以sp_oacreate可行，立即尝试sp_oacreate</p>
+<h3 id="sp-oacreate"><a href="#sp-oacreate" class="headerlink" title="sp_oacreate"></a>sp_oacreate</h3><p>执行sp_oacreate存储过程是不能直接拿到命令回显的，但是师傅们已经公开了一些方案可以拿到回显，比如下面这段POC我经常用</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">declare</span> <span class="variable">@test</span> <span class="type">int</span>,<span class="variable">@exec</span> <span class="type">int</span>,<span class="variable">@text</span> <span class="type">int</span>,<span class="variable">@str</span> <span class="type">varchar</span>(<span class="number">8000</span>);</span><br><span class="line"><span class="keyword">exec</span> sp_oacreate <span class="string">&#x27;&#123;72C24DD5-D70A-438B-8A42-98424B88AFB8&#125;&#x27;</span>,<span class="variable">@test</span> output;</span><br><span class="line"><span class="keyword">exec</span> sp_oamethod <span class="variable">@test</span>,<span class="string">&#x27;exec&#x27;</span>,<span class="variable">@exec</span> output,<span class="string">&#x27;whoami&#x27;</span>;</span><br><span class="line"><span class="keyword">exec</span> sp_oamethod <span class="variable">@exec</span>, <span class="string">&#x27;StdOut&#x27;</span>, <span class="variable">@text</span> <span class="keyword">out</span>;</span><br><span class="line"><span class="keyword">exec</span> sp_oamethod <span class="variable">@text</span>, <span class="string">&#x27;readall&#x27;</span>, <span class="variable">@str</span> <span class="keyword">out</span>;</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@str</span>;</span><br></pre></td></tr></table></figure>
+
+<p>执行这段POC，再用sqlmap的sql-shell执行<code>select @str</code>读命令执行结果。照着这个思路搞了一会儿，不能说是十拿九稳，可以说是一无所获。</p>
+<p><code>@str</code>引了我的怀疑，直觉告诉我问题出在这个变量上。百度mssql中的<code>@</code>有啥用</p>
+<p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416220807314.png" alt="image-20220416220807314"></p>
+<p>果然<code>@</code>是一个声明局部变量的符号，而我们上面的poc执行完成之后这个<code>@str</code>变量的值就无了，再尝试去读<code>@str</code>的值自然是读不到的。</p>
+<p>而我们现在找到的这个注入是sql盲注，盲注不能直接用一个request请求就拿到回显结果，需要大量地去跑数据包。显然最初的poc无法满足我们的需求，我们需要对poc做改造。梳理前面这个poc的回显思路:<strong>声明了一个局部@str变量,然后把回显写入这个变量,最后查询这个变量的值拿到回显</strong>。</p>
+<p>那我们是不是可以想办法把回显搞到一个全局变量中,但是百度看了下mssql是不允许用户声明全局变量的…梦碎</p>
+<p>既然声明变量这条路走不通那就想想别的思路，作为一个数据库自然可以往数据库的表中存入信息，那我们应该可以把回显的数据写入数据库，所以构造下面的新POC：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">CREATE</span> <span class="keyword">TABLE</span> cmdtmp22 (dir <span class="type">varchar</span>(<span class="number">8000</span>));</span><br><span class="line"><span class="keyword">declare</span> <span class="variable">@test</span> <span class="type">int</span>,<span class="variable">@exec</span> <span class="type">int</span>,<span class="variable">@text</span> <span class="type">int</span>,<span class="variable">@str</span> <span class="type">varchar</span>(<span class="number">8000</span>); <span class="keyword">exec</span> sp_oacreate <span class="string">&#x27;&#123;72C24DD5-D70A-438B-8A42-98424B88AFB8&#125;&#x27;</span>,<span class="variable">@test</span> output; <span class="keyword">exec</span> sp_oamethod <span class="variable">@test</span>,<span class="string">&#x27;exec&#x27;</span>,<span class="variable">@exec</span> output,<span class="string">&#x27;whoami&#x27;</span>; <span class="keyword">exec</span> sp_oamethod <span class="variable">@exec</span>, <span class="string">&#x27;StdOut&#x27;</span>, <span class="variable">@text</span> <span class="keyword">out</span>; <span class="keyword">exec</span> sp_oamethod <span class="variable">@text</span>, <span class="string">&#x27;readall&#x27;</span>, <span class="variable">@str</span> <span class="keyword">out</span>;<span class="keyword">insert</span> <span class="keyword">into</span> cmdtmp22(dir) <span class="keyword">select</span> <span class="variable">@str</span><span class="comment">--</span></span><br></pre></td></tr></table></figure>
+
+<p>注入点手动执行这个POC,然后sql-shell走起尝试读cmdtmp22这个表的内容</p>
+<p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416220841781.png" alt="image-20220416220841781"></p>
+<p>成功搞到回显,拿下</p>
+<h3 id="注入到越权"><a href="#注入到越权" class="headerlink" title="注入到越权"></a>注入到越权</h3><p>搞出命令执行后我把点交给同事玩了，我自己去打一些其他的点，然而然而，一段时间后同事突然告诉我那个点又拿不到回显了。</p>
+<p>赶紧回来看看，测试确实拿不到了，尝试执行ping命令发现响应时间都是瞬发的….所以基本上可以判定sp_oacreate也被杀软拦了。(之前也遇到过类似的案例，估计是mssql的进程调用了太多次cmd.exe，被360等杀软拦截后mssql进程就不再有调cmd.exe的能力了)…</p>
+<p>直接用注入点拿shell这条路基本上已经gg了…那就只能想办法登后台冲了，弱口令马上跑起来并同步尝试用注入找user表..</p>
+<p>仔细看了下第二个注入点的包，仔细观察可以发现这个sql注入点正常的sql语句可以从当前的某个表读到用户信息。</p>
+<p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416221008754.png" alt="image-20220416221008754"></p>
+<p>感觉这个表就是用户表,可以通过改这里LoginID的值来fuzz用户数量，fuzz到000002xxxx的时候就读不到用户信息了，所以可以确定该系统大概有2W多用户，那我们可以确定正常的user表应该有2W以上的用户，用sql-shell按数据量对表名排序</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> a.name, b.rows</span><br><span class="line"><span class="keyword">FROM</span> sysobjects <span class="keyword">AS</span> a <span class="keyword">INNER</span> <span class="keyword">JOIN</span> sysindexes <span class="keyword">AS</span> b <span class="keyword">ON</span> a.id <span class="operator">=</span> b.id</span><br><span class="line"><span class="keyword">WHERE</span> (a.type <span class="operator">=</span> <span class="string">&#x27;u&#x27;</span>) <span class="keyword">AND</span> (b.indid <span class="keyword">IN</span> (<span class="number">0</span>, <span class="number">1</span>))</span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> b.rows <span class="keyword">DESC</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416221037063.png" alt="image-20220416221037063"></p>
+<p>可以看到数据量超过2W的一共就5个表，通过观察名字也能感觉到应该就是这个user_file表。</p>
+<p>但是但是…</p>
+<p>随便读了这个表的10条内容，结果发现这10个用户的密码字段刚好都是null,即很多用户没有密码..裂开..本来就是个盲注点..偶尔掉包很影响判断，而且这个表里面好几个字段都像密码字段，像用户名的字段也有好几个，非常费时间…</p>
+<p>跑注入的失落之际顺便重新观察数据包，发现似乎之前都忽视了Cookie中的LocalID字段，这玩意会不会也可以用来判断用户?用之前的弱口令再次登进后台仔细看了下burp包，发现也存在多个ID字段且登陆成功后Cookie字段里的LocalID变成了000000xxxx，可以确定这些ID或多或少能代表当前是哪个用户</p>
+<p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416221215887.png" alt="image-20220416221215887"></p>
+<p>于是用普通账号登录时抓包把所有ID相关字段改成0000000000(因为fuzz了会儿感觉很多人都不像管理员，甚至这个id也不像，但这个ID号很靠前，说明这个用户创建很早，所以大概率权限很高)，运气很好，这里确实有越权，越权后用户的功能点明显变多。</p>
+<p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416221343075.png" alt="image-20220416221343075"></p>
+<p>后面进一步验证直接在浏览器中设置document.cookie然后用普通用户登陆就可以拿到管理员权限，所以可以确定是Cookie字段在起鉴权的作用。</p>
+<p>越权后功能点有100多个，随便翻了会儿找了个上传点愉快拿下</p>
+<h3 id="彩蛋"><a href="#彩蛋" class="headerlink" title="彩蛋"></a>彩蛋</h3><p>实战发现sp_oacreate加载COM组件执行系统命令时，用<code>CLSID</code>的形式加载比直接<code>wscript.shell</code>更免杀一点。</p>
+<p>即CLSID的形式</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">exec sp_oacreate &#x27;&#123;72C24DD5-D70A-438B-8A42-98424B88AFB8&#125;&#x27;</span><br></pre></td></tr></table></figure>
+
+<p>比wscript.shell的形式更好</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">EXEC sp_oacreate &#x27;wscript.shell&#x27;</span><br></pre></td></tr></table></figure>
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/15/%E4%B8%80%E6%AC%A1fastjson%E7%BB%95waf%E6%A1%88%E4%BE%8B/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-16 23:10:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%81%87%E5%88%B0mssql%E6%B3%A8%E5%85%A5"><span class="toc-text">遇到mssql注入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#sp-oacreate"><span class="toc-text">sp_oacreate</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B3%A8%E5%85%A5%E5%88%B0%E8%B6%8A%E6%9D%83"><span class="toc-text">注入到越权</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BD%A9%E8%9B%8B"><span class="toc-text">彩蛋</span></a></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + %E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F16%2F%25E6%25B8%2597%25E9%2580%258F%25E6%25A1%2588%25E4%25BE%258B%25E4%25B8%2580%25E6%259E%259A%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
