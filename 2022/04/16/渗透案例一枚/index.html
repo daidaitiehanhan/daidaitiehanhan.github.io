@@ -147,7 +147,7 @@ MathJax = {
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">declare</span> <span class="variable">@test</span> <span class="type">int</span>,<span class="variable">@exec</span> <span class="type">int</span>,<span class="variable">@text</span> <span class="type">int</span>,<span class="variable">@str</span> <span class="type">varchar</span>(<span class="number">8000</span>);</span><br><span class="line"><span class="keyword">exec</span> sp_oacreate <span class="string">&#x27;&#123;72C24DD5-D70A-438B-8A42-98424B88AFB8&#125;&#x27;</span>,<span class="variable">@test</span> output;</span><br><span class="line"><span class="keyword">exec</span> sp_oamethod <span class="variable">@test</span>,<span class="string">&#x27;exec&#x27;</span>,<span class="variable">@exec</span> output,<span class="string">&#x27;whoami&#x27;</span>;</span><br><span class="line"><span class="keyword">exec</span> sp_oamethod <span class="variable">@exec</span>, <span class="string">&#x27;StdOut&#x27;</span>, <span class="variable">@text</span> <span class="keyword">out</span>;</span><br><span class="line"><span class="keyword">exec</span> sp_oamethod <span class="variable">@text</span>, <span class="string">&#x27;readall&#x27;</span>, <span class="variable">@str</span> <span class="keyword">out</span>;</span><br><span class="line"><span class="keyword">select</span> <span class="variable">@str</span>;</span><br></pre></td></tr></table></figure>
 
 <p>执行这段POC，再用sqlmap的sql-shell执行<code>select @str</code>读命令执行结果。照着这个思路搞了一会儿，不能说是十拿九稳，可以说是一无所获。</p>
-<p><code>@str</code>引了我的怀疑，直觉告诉我问题出在这个变量上。百度mssql中的<code>@</code>有啥用</p>
+<p><code>@str</code>引起了我的怀疑，直觉告诉我问题出在这个变量上。百度mssql中的<code>@</code>有啥用</p>
 <p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416220807314.png" alt="image-20220416220807314"></p>
 <p>果然<code>@</code>是一个声明局部变量的符号，而我们上面的poc执行完成之后这个<code>@str</code>变量的值就无了，再尝试去读<code>@str</code>的值自然是读不到的。</p>
 <p>而我们现在找到的这个注入是sql盲注，盲注不能直接用一个request请求就拿到回显结果，需要大量地去跑数据包。显然最初的poc无法满足我们的需求，我们需要对poc做改造。梳理前面这个poc的回显思路:<strong>声明了一个局部@str变量,然后把回显写入这个变量,最后查询这个变量的值拿到回显</strong>。</p>
@@ -159,7 +159,7 @@ MathJax = {
 <p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416220841781.png" alt="image-20220416220841781"></p>
 <p>成功搞到回显,拿下</p>
 <h3 id="注入到越权"><a href="#注入到越权" class="headerlink" title="注入到越权"></a>注入到越权</h3><p>搞出命令执行后我把点交给同事玩了，我自己去打一些其他的点，然而然而，一段时间后同事突然告诉我那个点又拿不到回显了。</p>
-<p>赶紧回来看看，测试确实拿不到了，尝试执行ping命令发现响应时间都是瞬发的….所以基本上可以判定sp_oacreate也被杀软拦了。(之前也遇到过类似的案例，估计是mssql的进程调用了太多次cmd.exe，被360等杀软拦截后mssql进程就不再有调cmd.exe的能力了)…</p>
+<p>赶紧回来看看，测试发现确实拿不到回显了，尝试执行ping命令发现响应时间都是瞬发的….所以基本上可以判定sp_oacreate也被杀软拦了。(之前也遇到过类似的案例，估计是mssql的进程调用了太多次cmd.exe，被360等杀软拦截后mssql进程就不再有调cmd.exe的能力了)…</p>
 <p>直接用注入点拿shell这条路基本上已经gg了…那就只能想办法登后台冲了，弱口令马上跑起来并同步尝试用注入找user表..</p>
 <p>仔细看了下第二个注入点的包，仔细观察可以发现这个sql注入点正常的sql语句可以从当前的某个表读到用户信息。</p>
 <p><img src="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/image-20220416221008754.png" alt="image-20220416221008754"></p>
