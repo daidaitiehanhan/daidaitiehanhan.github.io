@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      Shiro越权学习 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">Shiro越权学习</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-19 22:36:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h1 id="Shiro越权学习2-0"><a href="#Shiro越权学习2-0" class="headerlink" title="Shiro越权学习2.0"></a>Shiro越权学习2.0</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>之前年初看到su18大师傅对<a target="_blank" rel="noopener" href="https://su18.org/post/shiro-5/">Shiro的CVE</a>做了整理，里面的好几个漏洞都没有调过，写这篇文章记录自己的学习过程。可能有些地方有问题还请师傅们指教。</p>
+<h2 id="CVE-2020-11989"><a href="#CVE-2020-11989" class="headerlink" title="CVE-2020-11989"></a>CVE-2020-11989</h2><p><a target="_blank" rel="noopener" href="https://issues.apache.org/jira/browse/SHIRO-782">https://issues.apache.org/jira/browse/SHIRO-782</a></p>
+<blockquote>
+<p>影响范围:shiro &lt; 1.5.3</p>
+</blockquote>
+<h3 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h3><h4 id="ContextPath"><a href="#ContextPath" class="headerlink" title="ContextPath"></a>ContextPath</h4><p>前置条件</p>
+<blockquote>
+<ol>
+<li>必须配置有context-path</li>
+<li>Spring控制器中没有另外的权限校验代码</li>
+</ol>
+</blockquote>
+<p>参考<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/7964">作者文章</a></p>
+<p>这个洞算是前面CVE-2020-1957补丁的一个绕过，前面学习CVE-2020-1957时了解到的修复是针对<code>PathMatchingFilterChainResolver#getChain</code>获取URI的底层实现不再直接<code>request.getRequestURI()</code></p>
+<p>而是拼接<code>getContextPath()</code>+<code>getServletPath()</code>+<code>getPathInfo()</code></p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418224156118.png" alt="image-20220418224156118"></p>
+<p>在这里下断点，看看当我们请求<code>;/bypass/;/bypass/;/aaa</code>时各个部分的取值</p>
+<p><code>request.getContextPath()</code>得到<code>/;/bypass</code></p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418224846581.png" alt="image-20220418224846581"></p>
+<p><code>request.getServletPath()</code>得到<code>/bypass/aaa</code></p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418224947024.png" alt="image-20220418224947024"></p>
+<p><code>request.getPathInfo()</code>得到null</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418225044911.png" alt="image-20220418225044911"></p>
+<p>则最终拼接得到<code>/;/bypass//bypass/aaa</code>，然后进入<code>decodeAndCleanUriString()</code>方法</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418225109373.png" alt="image-20220418225109373"></p>
+<p>前面讲过这个<code>decodeAndCleanUriString()</code>方法遇到;号会截断</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418225157988.png" alt="image-20220418225157988"></p>
+<p>所以会返回一个<code>/</code></p>
+<p>最终在getChain处，requestURI的值是<code>/</code>，用<code>/</code>去参与Ant匹配可以正常通过Shiro的鉴权。</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418225413166.png" alt="image-20220418225413166"></p>
+<p>而spring处理<code>/;/bypass//bypass/aaa</code>请求可以正常顺利的到达路由。</p>
+<p>所以这个越权的大锅在<code>request.getContextPath()</code>这里</p>
+<h4 id="URL编码"><a href="#URL编码" class="headerlink" title="URL编码"></a>URL编码</h4><p>前置条件</p>
+<blockquote>
+<ol>
+<li>PathVariable 注解的参数只能是 String 类型</li>
+<li>Ant匹配&#x2F;*</li>
+</ol>
+</blockquote>
+<p>参考<a target="_blank" rel="noopener" href="https://xlab.tencent.com/cn/2020/06/30/xlab-20-002/">腾讯文章</a></p>
+<p>前面讲到<code>getRequestUri()</code>方法取uri的值时，拼接<code>getContextPath()</code>+<code>getServletPath()</code>+<code>getPathInfo()</code>后会进入<code>decodeAndCleanUriString()</code>方法</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418230105109.png" alt="image-20220418230105109"></p>
+<p>这里对uri做了一次url解码操作，也就是说Shiro会对url有2次解码，而tomcat只会进行1次解码，利用中间的差异性就能达到绕过鉴权的效果。</p>
+<p>当Ant表达式这样写</p>
+<blockquote>
+<p>map.put(“&#x2F;login”, “anon”);<br>map.put(“&#x2F;aaaaa&#x2F;**”, “anon”);<br>map.put(“&#x2F;bypass&#x2F;*”, “authc”);</p>
+</blockquote>
+<p>正常触发&#x2F;bypass&#x2F;xx 这个路由就是我们的目的</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418231304280.png" alt="image-20220418231304280"></p>
+<p>请求<code>bypass/bypass/2%252f1</code>，在<code>PathMatchingFilterChainResolver#getChain</code>下断点</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418231421001.png" alt="image-20220418231421001"></p>
+<p>可以看到getChain的requestURI就变成了&#x2F;bypass&#x2F;2&#x2F;1</p>
+<p>当我们Ant配置<code>/bypass/*</code>时，是匹配不到<code>/bypass/2/1</code>的，只有当Ant配置<code>/bypass/**</code>才能匹配到<code>/bypass</code>多级子目录的内容，所以可以绕过Ant的匹配实现权限绕过</p>
+<h3 id="实战"><a href="#实战" class="headerlink" title="实战"></a>实战</h3><p>只有当配置&#x2F;byass&#x2F;*这种Ant表达式才能触发，而且两种利用方式都还有一些各自的额外条件。</p>
+<p>所以总的来说感觉这个漏洞实战不太容易黑盒遇见。</p>
+<p>一定要打就下面两种POC</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">/;/bypass</span><br><span class="line">/bypass/a%2f33s</span><br></pre></td></tr></table></figure>
+
+<h3 id="修复"><a href="#修复" class="headerlink" title="修复"></a>修复</h3><p><a target="_blank" rel="noopener" href="https://github.com/apache/shiro/commit/01887f645f92d276bbaf7dc644ad28ed4e82ef02">https://github.com/apache/shiro/commit/01887f645f92d276bbaf7dc644ad28ed4e82ef02</a></p>
+<p>首先不再用<code>request.getContextPath()</code>额外处理context</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418232708902.png" alt="image-20220418232708902"></p>
+<p>还有<code>getPathWithinApplication()</code>方法之前是从<code>requestUri</code>减去<code>contextPath</code>，现在是<code>getServletPath()</code>加上<code>getPathInfo()</code>，然后用<code>removeSemicolon</code>方法截断<code>;</code>号，现在直接拼接得到uri，所以不会再触发<code>decodeAndCleanUriString</code>做url解码。</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220418232838482.png" alt="image-20220418232838482"></p>
+<h2 id="CVE-2020-13933"><a href="#CVE-2020-13933" class="headerlink" title="CVE-2020-13933"></a>CVE-2020-13933</h2><p><a target="_blank" rel="noopener" href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13933">https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13933</a></p>
+<blockquote>
+<p>影响范围:shiro &lt; 1.6.0</p>
+</blockquote>
+<h3 id="原理-1"><a href="#原理-1" class="headerlink" title="原理"></a>原理</h3><p>前置条件</p>
+<blockquote>
+<ol>
+<li>PathVariable 注解的参数只能是 String 类型</li>
+<li>Ant匹配&#x2F;*</li>
+</ol>
+</blockquote>
+<p>这个漏洞是CVE-2020-11989补丁的一个绕过。</p>
+<p>CVE-2020-11989补丁后，Shiro通过拼接<code>getServletPath()+getPathINfo()</code>，然后执行<code>removeSemicolon()</code>方法处理<code>;</code>号，最后<code>normalize()</code>方法标准化路径。其中<code>getXXX(request)</code>方法会做一次url解码操作。</p>
+<p>即Shiro获取URI，首先是url解码处理，其次才会对<code>;</code>号做处理。</p>
+<p>然而在Spring的处理顺序却略有不同，在方法<code>UrlPathHelper#decodeAndCleanUriString</code>中</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419115848742.png" alt="image-20220419115848742"></p>
+<p>是先用<code>removeSemicolonContent()</code>方法对<code>;</code>号做处理，再做url解码处理。</p>
+<p>而这个对<code>;</code>做处理的实现中，显然我们url编码可以绕过这里对<code>;</code>号的处理。</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419120506562.png" alt="image-20220419120506562"></p>
+<p>举一个简单的例子说明Shiro和Spring对URI处理的差异，当我们发起<code>/bypass/%3bok</code>请求时，</p>
+<ul>
+<li>Shiro会先对url做解码，然后遇到<code>;</code>号做截断处理，最终参与Ant匹配的是<code>/bypass/</code>，而用Ant配置<code>/bypass/*</code>匹配不了<code>/bypass/</code>，绕过了权限鉴定</li>
+<li>Spring会先处理<code>;</code>号，但是我们url编码可以绕过这个处理，其次才会做url解码，则经过Spring处理得到<code>/bypass/;ok</code>，Spring把<code>;ok</code>整体当成字符串，参与Handler的匹配，可以匹配到<code>/bypass/&#123;id&#125;</code>这个路由</li>
+</ul>
+<p>关于Spring的详细处理过程可以参考这个<a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/218270">Hu3sky师傅的文章</a>，总之由于Spring和Shiro处理后结果的差异，导致我们可以实现权限绕过</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419121139072.png" alt="image-20220419121139072"></p>
+<h3 id="实战-1"><a href="#实战-1" class="headerlink" title="实战"></a>实战</h3><p>因为必须配置<code>/bypass/*</code>才能利用，一般程序员不太会这样写，所以实战中黑盒很难碰到..</p>
+<p>POC记录</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">在要访问的路径前加%3b</span><br><span class="line">例如/manager/%3bindex 越权访问/manager/*路由的功能</span><br></pre></td></tr></table></figure>
+
+<h3 id="修复-1"><a href="#修复-1" class="headerlink" title="修复"></a>修复</h3><p>Shiro 1.6.0对这个漏洞做了修复，参考<a target="_blank" rel="noopener" href="https://github.com/apache/shiro/commit/dc194fc977ab6cfbf3c1ecb085e2bac5db14af6d">https://github.com/apache/shiro/commit/dc194fc977ab6cfbf3c1ecb085e2bac5db14af6d</a></p>
+<p>新增了<code>InvalidRequestFilter</code>用于全局匹配过滤</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419141043673.png" alt="image-20220419141043673"></p>
+<p><code>isAccessAllowed</code>方法遇到下面中任一个字符就会返回false</p>
+<ul>
+<li><code>；</code>号及其url编码</li>
+<li><code>\</code>号及其url编码</li>
+<li>非Ascii字符</li>
+</ul>
+<h2 id="CVE-2020-17510"><a href="#CVE-2020-17510" class="headerlink" title="CVE-2020-17510"></a>CVE-2020-17510</h2><p><a target="_blank" rel="noopener" href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-17510">https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-17510</a></p>
+<blockquote>
+<p>影响范围：shiro &lt; 1.7.0</p>
+</blockquote>
+<h3 id="原理-2"><a href="#原理-2" class="headerlink" title="原理"></a>原理</h3><p>前置条件</p>
+<blockquote>
+<p>类似CVE-2020-11989</p>
+</blockquote>
+<p>感觉也算上面漏洞的绕过，还是利用Spring和Shiro处理uri字符的结果差异实现权限绕过，这次用到的是<code>%2e</code>。</p>
+<p>具体效果如su18师傅文章中所述：</p>
+<blockquote>
+<p>例如访问：”&#x2F;audit&#x2F;%2e&#x2F;“时</p>
+<ul>
+<li>Shiro url decode：”&#x2F;audit&#x2F;.&#x2F;“</li>
+<li>Shiro 标准化路径：”&#x2F;audit&#x2F;“</li>
+<li>Spring 标准化路径：”&#x2F;audit&#x2F;%2e&#x2F;“</li>
+<li>Spring url decode：”&#x2F;audit&#x2F;.”</li>
+</ul>
+</blockquote>
+<p>和上面一个漏洞很像，Shiro和Spring处理后得到的uri值不一样，Shiro那边<code>/audit/</code>通过了权限验证，然而Spring这边真正访问的却是<code>/audit/.</code>，达成了权限绕过。</p>
+<p>但我这里复现不了su18师傅文章中的情景，我用的<code>spring-boot-starter-parent-2.3.x</code>和<code>spring-boot-starter-parent-1.5.x</code>搭建的demo环境spring部分的代码和师傅的代码有出入。</p>
+<p>我这边复现时遇到的关键点在<code>UrlPathHelper.getLookupPathForRequest</code>，这里会由于不同的spring版本导致return的结果不同。</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419165526659.png" alt="image-20220419165526659"></p>
+<p>这里有个关于springboot %2b的trick，如<a target="_blank" rel="noopener" href="http://rui0.cn/archives/1643">Ruilin师傅</a>所说:</p>
+<blockquote>
+<p>当Spring Boot版本在小于等于2.3.0.RELEASE的情况下，<code>alwaysUseFullPath</code>为默认值false，这会使得其获取ServletPath，所以在路由匹配时相当于会进行路径标准化包括对<code>%2e</code>解码以及处理跨目录，这可能导致身份验证绕过。而反过来由于高版本将<code>alwaysUseFullPath</code>自动配置成了true从而开启全路径，又可能导致一些安全问题。</p>
+</blockquote>
+<p>假如请求<code>/bypass/%2e2e</code></p>
+<p>在高版本的Spring中，由于<code>alwaysUseFullPath</code>默认为true，所以在<code>UrlPathHelper#getLookupPathForRequest</code>直接返回了用<code>this.getPathWithinApplication()</code>处理后的<code>/bypass/..</code>，所以在Spring中仍然把<code>..</code>当成字符拿去请求<code>/bypass/*</code>路由。</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419161808887.png" alt="image-20220419161808887"></p>
+<p>直接绕过</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419161532970.png" alt="image-20220419161532970"></p>
+<p>但是当Spring版本不高时，用<code>getPathWithinServletMapping</code>处理后得到的却是<code>bypass/..</code>，少了关键的一截<code>/</code>导致匹配不上，</p>
+<p>看看<code>getPathWithinServletMapping</code>中的处理，核心代码如下</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419172827061.png" alt="image-20220419172827061"></p>
+<p>关键在这个<code>getRemainingPath</code>方法</p>
+<p><code>getRemainingPath</code>把requstUri和mapping差异的部分取出来，即把<code>getPathWithinApplication</code>和<code>getServletPath</code>结果中相同的部分做个减法。</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419172613066.png" alt="image-20220419172613066"></p>
+<p>这个处理很恶心，直接导致我在spring-boot-starter 2.3.0及以下的版本我这边都复现不了。</p>
+<p>不过我换上更高版本的Shiro后，在高版本spring依然可以利用<code>%2e</code>这个姿势绕过。</p>
+<h3 id="实战-2"><a href="#实战-2" class="headerlink" title="实战"></a>实战</h3><p>实战中也有点鸡肋..</p>
+<p>在要尝试越权的路由后面加上盲测POC</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">%2e</span><br><span class="line">%2e/</span><br><span class="line">%2e%2e</span><br><span class="line">/%2e%2e/</span><br></pre></td></tr></table></figure>
+
+<h3 id="修复-2"><a href="#修复-2" class="headerlink" title="修复"></a>修复</h3><p><a target="_blank" rel="noopener" href="https://github.com/apache/shiro/commit/6acaaee9bb3a27927b599c37fabaeb7dd6109403">https://github.com/apache/shiro/commit/6acaaee9bb3a27927b599c37fabaeb7dd6109403</a></p>
+<p>建议看看<a target="_blank" rel="noopener" href="https://su18.org/post/shiro-4/#%E6%BC%8F%E6%B4%9E%E4%BF%AE%E5%A4%8D">su18师傅的分析</a></p>
+<blockquote>
+<p>创建了 UrlPathHelper 的子类 ShiroUrlPathHelper，并重写了 <code>getPathWithinApplication</code> 和 <code>getPathWithinServletMapping</code> 两个方法，全部使用 Shiro 自己的逻辑 <code>WebUtils#getPathWithinApplication</code> 进行返回。</p>
+<p>设置后，Spring 匹配 handler 时获取路径的逻辑就会使用 Shiro 提供的逻辑，保持了二者逻辑的一致。从而避免了绕过的情况。</p>
+</blockquote>
+<h2 id="CVE-2020-17523"><a href="#CVE-2020-17523" class="headerlink" title="CVE-2020-17523"></a>CVE-2020-17523</h2><p><a target="_blank" rel="noopener" href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-17523">https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-17523</a></p>
+<blockquote>
+<p>影响范围: shiro &lt; 1.7.1</p>
+</blockquote>
+<h3 id="原理-3"><a href="#原理-3" class="headerlink" title="原理"></a>原理</h3><p>前置条件</p>
+<blockquote>
+<p>类似CVE-2020-11989</p>
+</blockquote>
+<p>又一个和前面差不多的绕过，这次换了个字符<code>%20</code>。</p>
+<p>请求<code>/bypass/%20</code>，</p>
+<p>在<code>PathMatchingFilterChainResolver#getChain</code>断点看看Shiro中的处理</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419180547547.png" alt="image-20220419180547547"></p>
+<p>会进入<code>pathMatches</code>方法匹配pattern</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419175701910.png" alt="image-20220419175701910"></p>
+<p>一路可以跟到doMatch方法</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419175927320.png" alt="image-20220419175927320"></p>
+<p>可以看到在<code>tokenizeToStringArray</code>对path参数处理后空格被处理掉了，一路跟<code>tokenizeToStringArray</code>方法</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419180333433.png" alt="image-20220419180333433"></p>
+<p>可以看到有一个trim()处理空格，即Shiro在做pattern匹配时默认会处理空格。最终<code>/bypass/%20</code>变成了<code>/bypass/</code>，绕过Shiro鉴权。</p>
+<p>而在Spring对uri的处理流程中，默认把<code>%20</code>当成字符处理了，所以可以正常匹配到<code>/bypass/*</code>这个路由的handler</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419180721761.png" alt="image-20220419180721761"></p>
+<p>成功绕过</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419174642420.png" alt="image-20220419174642420"></p>
+<p>参考这个思路，fuzz发现在Shiro 1.6.0以前<code>%00--%20</code>都可以绕过</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419174712080.png" alt="image-20220419174712080"></p>
+<p>但是前面讲到CVE-2020-13933的补丁对非ASCII字符做了判断，所以在Shiro 1.7.0只有%20这个特殊字符。</p>
+<h3 id="实战-3"><a href="#实战-3" class="headerlink" title="实战"></a>实战</h3><p>这一篇文章讲的洞，截至目前为止，利用场景都和CVE-2020-11989的场景类似，都有很多条件限制，实战很难遇到。</p>
+<p>黑盒盲打情景就在想要尝试越权的路由后面加上%20</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/admin/%20</span><br></pre></td></tr></table></figure>
+
+<h3 id="修复-3"><a href="#修复-3" class="headerlink" title="修复"></a>修复</h3><p><a target="_blank" rel="noopener" href="https://github.com/apache/shiro/commit/ab1ea4a2006f6bd6a2b5f72740b7135662f8f160">https://github.com/apache/shiro/commit/ab1ea4a2006f6bd6a2b5f72740b7135662f8f160</a></p>
+<p>关键就是tokenizeToStringArray这里第三个参数设置了false</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419181113100.png" alt="image-20220419181113100"></p>
+<p>这个参数为false则默认不会做trim()操作处理空格</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419181205074.png" alt="image-20220419181205074"></p>
+<h2 id="CVE-2021-41303"><a href="#CVE-2021-41303" class="headerlink" title="CVE-2021-41303"></a>CVE-2021-41303</h2><p><a target="_blank" rel="noopener" href="https://issues.apache.org/jira/browse/SHIRO-825">https://issues.apache.org/jira/browse/SHIRO-825</a></p>
+<blockquote>
+<p>影响范围: shiro &#x3D;1.7.1 ?</p>
+</blockquote>
+<h3 id="原理-4"><a href="#原理-4" class="headerlink" title="原理"></a>原理</h3><p>搜了一下公开分析这个CVE的好像只有<a target="_blank" rel="noopener" href="https://threedr3am.github.io/2021/09/22/%E4%BB%8E%E6%BA%90%E7%A0%81diff%E5%88%86%E6%9E%90Apache-Shiro%201.7.1%E7%89%88%E6%9C%AC%E7%9A%84auth%20bypass%EF%BC%88CVE-2021-41303%EF%BC%89/">threedr3am师傅</a>和<a target="_blank" rel="noopener" href="https://su18.org/post/shiro-4/#cve-2021-41303">su18师傅</a>，但两个师傅也没有百分百确定这个CVE就是它们分析的这样，因为这个如果算成一个漏洞的话确实有点鸡肋..不管了记录下师傅们的分析..</p>
+<p>首先是Shiro-825的一个bug</p>
+<p>当配置</p>
+<blockquote>
+<p>map.put(“&#x2F;audit&#x2F;list”, “authc”);<br>map.put(“&#x2F;audit&#x2F;*”, “anon”);</p>
+</blockquote>
+<p>即<code>/audit/</code>目录下只有list需要权限验证，</p>
+<p>此时我们访问<code>/audit/hello</code>正常</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419213653928.png" alt="image-20220419213653928"></p>
+<p>但访问<code>/audit/hello/</code>抛出报错</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419213919140.png" alt="image-20220419213919140"></p>
+<p>跟到<code>DefaultFilterChainManager#proxy</code></p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419215458378.png" alt="image-20220419215458378"></p>
+<p>根据我们console里的报错信息，可以推断是this.getChain这里返回了null，跟进getChain方法</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419215607691.png" alt="image-20220419215607691"></p>
+<p>这里的chainName竟然是<code>/audit/hello</code>，<code>this.filterChains</code>里当然是没有这个chainName的，所以会抛出报错</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419215657930.png" alt="image-20220419215657930"></p>
+<p>根据报错的堆栈网上找找chainName是怎么来的，跟到<code>DefaultFilterChainManager#proxy</code>的上面<code>PathMatchingFilterChainResolver#getChain</code></p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419220322966.png" alt="image-20220419220322966"></p>
+<p>这里的<code>requestURINoTrailingSlash</code>就是后面的chainName，而<code>requestURINoTrailingSlash</code>的值是<code>removeTrailingSlash(requestURI)</code>拿到的，这里removeTrailingSlash就是把reuqestURI去除<code>/</code>后缀，这个就是我们用户输入可控的，即Shiro会去自己的filterChains中找完全跟用户输入相匹配的uri，显然是找不到的。threedr3am师傅分析了似乎只有Shiro 1.7.1这里是这样实现的，所以这个bug只影响Shiro 1.7.1。</p>
+<p>那怎么利用这个bug实现越权呢？首先配置</p>
+<blockquote>
+<p>map.put(“&#x2F;audit&#x2F;*”, “auth”);<br>map.put(“&#x2F;audit&#x2F;list”, “anon”);</p>
+</blockquote>
+<p>注意这个顺序，虽然<code>/audit/list</code>可以支持匿名访问，但是<code>/audit/*</code>在前面，所以正常情况下访问&#x2F;audit&#x2F;list也需要权限认证。</p>
+<p>正常访问&#x2F;audit&#x2F;list提醒登录</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419221548187.png" alt="image-20220419221548187"></p>
+<p>但是访问&#x2F;audit&#x2F;list&#x2F;可以绕过</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419221608463.png" alt="image-20220419221608463"></p>
+<h3 id="实战-4"><a href="#实战-4" class="headerlink" title="实战"></a>实战</h3><p>这个洞真是鸡肋他妈给鸡肋开门，鸡肋到家了..</p>
+<p>我不太觉得实战环境能遇到这洞…要黑盒找就随缘加个<code>/</code>符号在末尾试试..</p>
+<h3 id="修复-4"><a href="#修复-4" class="headerlink" title="修复"></a>修复</h3><p><a target="_blank" rel="noopener" href="https://github.com/apache/shiro/commit/4a20bf0e995909d8fda58f9c0485ea9eb2d43f0e">https://github.com/apache/shiro/commit/4a20bf0e995909d8fda58f9c0485ea9eb2d43f0e</a></p>
+<p>把<code>requestURINoTrailingSlash</code>换回pathPattern即可</p>
+<p><img src="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/image-20220419221706317.png" alt="image-20220419221706317"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>总算把su18师傅文章里梳理的Shiro权限绕过CVE全部过了一遍，有一说一，真正有用点的洞好像还是上一篇文章里的Shiro-682和CVE-2020-1957…目前为止看到的这些洞，可以用以下几点总结</p>
+<ul>
+<li>Ant表达式的<code>/bypass/*</code>匹配不到&#x2F;bypass&#x2F;或<code>/byapss/xxx/</code></li>
+<li>Spring版本对CVE有影响，主要是<code>alwaysUseFullPath</code>默认值不同，建议阅读<a target="_blank" rel="noopener" href="http://rui0.cn/archives/1643">Ruilin师傅 Spring Boot 中关于 %2e 的 Trick</a></li>
+<li>框架例如Spring和Shiro对URI的处理顺序或对某些特殊字符处理有差异(CVE-2020-13933，CVE-2020-17510，CVE-2020-17523)，在CVE-2020-17510补丁后Spring 匹配 handler 时获取路径的逻辑就会使用 Shiro 提供的逻辑，保持了二者逻辑的一致。</li>
+<li>更新的补丁存在缺陷(CVE-2020-11989，CVE-2021-41303)</li>
+<li>最强大的洞个人觉得是CVE-2020-1957，可以绕过<code>/**</code>的匹配</li>
+<li>还有个<a target="_blank" rel="noopener" href="https://issues.apache.org/jira/browse/SHIRO-760">李三师傅</a>用ajp协议实现越权，所以估计后续还会有一些不同协议对URI处理差异的细节可以利用。</li>
+</ul>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/18/vCenter2021%E5%87%A0%E4%B8%AA%E6%BC%8F%E6%B4%9E%E5%8F%8A%E5%90%8E%E6%B8%97%E9%80%8F/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-19 22:36:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02-0"><span class="toc-text">Shiro越权学习2.0</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CVE-2020-11989"><span class="toc-text">CVE-2020-11989</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86"><span class="toc-text">原理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#ContextPath"><span class="toc-text">ContextPath</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#URL%E7%BC%96%E7%A0%81"><span class="toc-text">URL编码</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E6%88%98"><span class="toc-text">实战</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E5%A4%8D"><span class="toc-text">修复</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CVE-2020-13933"><span class="toc-text">CVE-2020-13933</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86-1"><span class="toc-text">原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E6%88%98-1"><span class="toc-text">实战</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E5%A4%8D-1"><span class="toc-text">修复</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CVE-2020-17510"><span class="toc-text">CVE-2020-17510</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86-2"><span class="toc-text">原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E6%88%98-2"><span class="toc-text">实战</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E5%A4%8D-2"><span class="toc-text">修复</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CVE-2020-17523"><span class="toc-text">CVE-2020-17523</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86-3"><span class="toc-text">原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E6%88%98-3"><span class="toc-text">实战</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E5%A4%8D-3"><span class="toc-text">修复</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CVE-2021-41303"><span class="toc-text">CVE-2021-41303</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%9F%E7%90%86-4"><span class="toc-text">原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E6%88%98-4"><span class="toc-text">实战</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E5%A4%8D-4"><span class="toc-text">修复</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A0 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F19%2FShiro%25E8%25B6%258A%25E6%259D%2583%25E5%25AD%25A6%25E4%25B9%25A02.0%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
