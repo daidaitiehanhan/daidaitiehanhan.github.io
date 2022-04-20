@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      java安全漫谈观后感(一)-反射篇 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">java安全漫谈观后感(一)-反射篇</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-20 23:36:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h2 id="java安全漫谈观后感-一-反射篇"><a href="#java安全漫谈观后感-一-反射篇" class="headerlink" title="java安全漫谈观后感(一)-反射篇"></a>java安全漫谈观后感(一)-反射篇</h2><h3 id="00-前言"><a href="#00-前言" class="headerlink" title="00.前言"></a>00.前言</h3><p>p神有个分享java安全笔记的<a target="_blank" rel="noopener" href="https://github.com/phith0n/JavaThings">Java安全漫谈</a>项目，强烈建议准备入门java安全的师傅们看一看。我以前学习这个项目的时候记了一些相关笔记，p师傅在文章中偶尔会遗留一些问题，碰巧我记录了对部分问题的学习研究过程，希望或许能给正在学习相关问题的师傅们一点点帮助。</p>
+<h3 id="01-Java的动态特性——反射"><a href="#01-Java的动态特性——反射" class="headerlink" title="01.Java的动态特性——反射"></a>01.Java的动态特性——反射</h3><h4 id="动态特性"><a href="#动态特性" class="headerlink" title="动态特性"></a>动态特性</h4><p>似乎是p神自创的概念，指一段代码，改变其中的变量，将会导致这段代码产⽣功能性的变化，称之为动态特性。</p>
+<p>通俗来讲就是一句话木马，php，asp，aspx都有自己的一句话木马，我们都可以传入特定参数改变整个木马产生的代码功能。</p>
+<p>观察早期的”菜刀”，”蚁剑”等webshell管理工具可以发现一个现象，其他语言都有自己的”一句话木马”，唯独java的jsp文件很冗杂，不是一句话木马，功能都硬编码在jsp文件中。但后面”冰蝎”的推广算是给java的一句话实现开了个好头，以及后来threedr3am师傅随随便便就分享了十多种jsp木马实现，当然现在已经有了基于js引擎这种很接近java一句话的实现。</p>
+<p>回到p神的文章，提到</p>
+<blockquote>
+<p>Java虽不像PHP那么灵活， 但其提供的“反射”功能，也是可以提供一些动态特性</p>
+</blockquote>
+<h4 id="4种获取”类”的方法"><a href="#4种获取”类”的方法" class="headerlink" title="4种获取”类”的方法"></a>4种获取”类”的方法</h4><ul>
+<li><p><strong>obj.getClass()</strong> 如果上下⽂中存在某个类的实例obj，那么我们可以直接通过 obj.getClass() 来获取它的类</p>
+</li>
+<li><p><strong>Test.class</strong> 如果你已经加载了了某个类，只是想获取到它的java.lang.Class对象，那么就直接拿它的 class 属性即可。这个方法其实不属于反射。</p>
+</li>
+<li><p><strong>Class.forName</strong> 如果你知道某个类的名字，想获取到这个类，就可以使⽤forName来获取</p>
+</li>
+<li><p><strong>ClassLoader.getSystemClassLoader().loadClass(“java.lang.Runtime”)</strong> 类似的利用类加载机制，也可以获取 Class 对象(landgrey师傅在评论中补充的)</p>
+</li>
+</ul>
+<h4 id="一个典型的用反射执行系统命令的poc"><a href="#一个典型的用反射执行系统命令的poc" class="headerlink" title="一个典型的用反射执行系统命令的poc"></a>一个典型的用反射执行系统命令的poc</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//POC1</span></span><br><span class="line"><span class="string">&quot;&quot;</span>.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>).getMethod(<span class="string">&quot;exec&quot;</span>,String.class).invoke(String.class.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>).getMethod(<span class="string">&quot;getRuntime&quot;</span>).invoke(String.class.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>)),<span class="string">&quot;open -a calculator&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>可以看到上述POC1中引用了两次<code>invoke</code>，我们一般用反射是不会有这么长语句的，这里是因为上述POC1其实等价于</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java.lang.Runtime.getRuntime().exec(<span class="string">&quot;open -a calculator&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>这里<code>java.lang.Runtime</code>执行命令其实是先调用了<code>getRuntime()</code>方法(因为java.lang.Runtime是不能直接实例化，所以只能用<code>getRuntime()</code>方法拿到一个<code>Runtime</code>对象)，参数为空，然后再调用了exec方法，参数是”open -a calculator”，所以POC1中为了把语句转换成反射的格式，我们需要用到两次<code>invoke</code>。</p>
+<p>这里记录下<code>invoke</code>方法的用法</p>
+<p><img src="/2022/04/20/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%80)-%E5%8F%8D%E5%B0%84%E7%AF%87image-20220420223334790.png" alt="image-20220420223334790"></p>
+<p><code>invoke()</code>函数的第一个参数obj是java对象，即我们需要反射调用的反射的对象，第二个参数args是指我们反射要用到的方法所需要的参数值，注意这里的类型也得是Object。</p>
+<p>以我们上面POC1中的片段为例</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String.class.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>).getMethod(<span class="string">&quot;getRuntime&quot;</span>).invoke(String.class.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>))</span><br></pre></td></tr></table></figure>
+
+<p>解读一下</p>
+<ul>
+<li><p><code>String.class.getClass().forName(&quot;java.lang.Runtime&quot;)</code>先获取<code>java.lang.Runtime</code>这个Class</p>
+</li>
+<li><p><code>getMethod(&quot;getRuntime&quot;)</code>反射获得<code>java.lang.Runtime</code>中的<code>getRuntime()</code>方法</p>
+</li>
+<li><p><code>invoke(String.class.getClass().forName(&quot;java.lang.Runtime&quot;))</code>传入我们需要反射调用的<code>getRuntime()</code>方法的对象<code>java.lang.Runtime</code>,这里我们<code>invoke</code>方法没有第二个参数,是因为我们需要调用的<code>getRuntime</code>方法不需要带参数</p>
+</li>
+<li><p>整个语句等价于<code>java.lang.Runtime.getRuntime()</code>，最终会返回一个当前环境中的<code>Runtime</code>对象，所以这一整个片段会在上述POC1中的第一个invoke中充当第一个参数</p>
+</li>
+</ul>
+<p>考虑<code>Runtime.exec</code>在linux中执行命令有坑，其实可以把poc中<code>String.class</code>换成<code>String[].class</code>执行命令会更通用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//POC2</span></span><br><span class="line"><span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">1</span>).getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>).getMethod(<span class="string">&quot;exec&quot;</span>,String[].class).invoke(<span class="string">&quot;&quot;</span>.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>).getMethod(<span class="string">&quot;getRuntime&quot;</span>).invoke(<span class="string">&quot;&quot;</span>.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>)), (Object) <span class="keyword">new</span> <span class="title class_">String</span>[]&#123;<span class="string">&quot;open&quot;</span>,<span class="string">&quot;-a&quot;</span>,<span class="string">&quot;calculator&quot;</span>&#125;);</span><br></pre></td></tr></table></figure>
+
+<p>但是实战环境中往往(例如表达式上下文中)无法使用强制类型转换，所以实战得用下面这种POC</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">new</span> <span class="title class_">Integer</span>.class.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>).getMethod(<span class="string">&quot;exec&quot;</span>,String[].class).invoke(<span class="string">&quot;&quot;</span>.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>).getMethod(<span class="string">&quot;getRuntime&quot;</span>).invoke(<span class="string">&quot;&quot;</span>.getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>)), <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123; <span class="keyword">new</span> <span class="title class_">String</span>[]&#123;<span class="string">&quot;open&quot;</span>,<span class="string">&quot;-a&quot;</span>,<span class="string">&quot;calculator&quot;</span>&#125;&#125;)</span><br></pre></td></tr></table></figure>
+
+<h4 id="getClass"><a href="#getClass" class="headerlink" title="getClass"></a>getClass</h4><p>以下写法都可以获取到java.lang.Runtime对象，所以有的师傅在写poc时会在这个位置插入自己的id</p>
+<ul>
+<li><pre><code class="java">new Integer(1).getClass().forName(&quot;java.lang.Runtime&quot;)
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">- ```java</span><br><span class="line">  Integer.class.getClass().forName(&quot;java.lang.Runtime&quot;)</span><br></pre></td></tr></table></figure>
+</code></pre>
+</li>
+<li><p>&#96;&#96;&#96;java<br>“”.getClass().forName(“java.lang.Runtime”)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">#### Class.forName</span><br><span class="line"></span><br><span class="line">默认会执行类初始化操作，因为</span><br><span class="line"></span><br><span class="line">&gt; Class.forName(className)</span><br><span class="line">&gt;</span><br><span class="line">&gt; // 等于</span><br><span class="line">&gt;</span><br><span class="line">&gt; Class.forName(className, true, currentLoader)</span><br><span class="line">&gt;</span><br><span class="line">&gt; //forName 的第⼀个参数是类名;第⼆个参数表示是否初始化;第三个参数就是ClassLoader </span><br><span class="line"></span><br><span class="line">#### 关于初始化</span><br><span class="line"></span><br><span class="line">参照p神给的案例</span><br><span class="line"></span><br><span class="line">``` java</span><br><span class="line">public class TrainPrint &#123;</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">System.out.printf(&quot;Empty block initial %s\n&quot;, this.getClass()); &#125;</span><br><span class="line"></span><br><span class="line">static &#123;</span><br><span class="line"></span><br><span class="line">System.out.printf(&quot;Static initial %s\n&quot;, TrainPrint.class);</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public TrainPrint() &#123;</span><br><span class="line"></span><br><span class="line">System.out.printf(&quot;Initial %s\n&quot;, this.getClass());</span><br><span class="line"></span><br><span class="line">&#125; &#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>我们new一下可以发现其执行顺序是</p>
+<p><img src="/2022/04/20/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%80)-%E5%8F%8D%E5%B0%84%E7%AF%87image-20220420223359346.png" alt="image-20220420223359346"></p>
+<p>即最先执行static块中代码，其次是{}即构造代码块，最后才是我们的构造函数。</p>
+<blockquote>
+<p>static {} 就是在“类初始化”的时候调⽤用的，⽽ {} 中的代码会放在构造函数的 super() 后面，但在当前构造函数内容的前⾯</p>
+</blockquote>
+<p>同时我们执行</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;&quot;</span>.getClass().forName(<span class="string">&quot;TrainPrint&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>可以发现确实<strong>只会执行static块中内容</strong>，即<strong>类初始化流程中只会执行static块中代码</strong>。所以我们漏洞利用(比如用bcel的classloader去加载我们恶意字节码并实例化的情景)常常在static块中插入我们的恶意代码</p>
+<h3 id="02-反射的简单利用"><a href="#02-反射的简单利用" class="headerlink" title="02.反射的简单利用"></a>02.反射的简单利用</h3><h4 id="符号的作用"><a href="#符号的作用" class="headerlink" title="$符号的作用"></a>$符号的作用</h4><blockquote>
+<p>$ 的作用是查找内部类。</p>
+<p>Java的普通类 C1 中支持编写内部类 C2 ，而在编译的时候，会生成两个文件: C1.class 和 C1$C2.class ，我们可以把他们看作两个无关的类，通过 Class.forName(“C1$C2”) 即可加载这个内部类。</p>
+</blockquote>
+<h4 id="newInstance"><a href="#newInstance" class="headerlink" title="newInstance"></a>newInstance</h4><blockquote>
+<p>class.newInstance() 的作用就是调用这个类的无参构造函数，会返回Obejct对象</p>
+</blockquote>
+<p>补充一点newInstance也会执行”类初始化操作”，即执行static块中代码。所以在例如bcel的poc构造中可以看到都会在最后加上一句newInstance。</p>
+<p>不成功的原因:</p>
+<ol>
+<li><p>你使用的类没有无参构造函数</p>
+</li>
+<li><p>你使用的类构造函数是私有的</p>
+</li>
+</ol>
+<h4 id="单例模式"><a href="#单例模式" class="headerlink" title="单例模式"></a>单例模式</h4><blockquote>
+<p>比如，对于Web应用来说，数据库连接只需要建立一次，而不是每次用到数据库的时候再新建立一个连接，此时作为开发者你就可以将数据库连接使用的类的构造函数设置为私有，然后编写一个静态方法来获取</p>
+</blockquote>
+<p>比如java.lang.Runtime就是一个单例模式，所以我们只能用<code>getRuntime（）</code>来获取其对象，而不能自己直接new一个。</p>
+<h4 id="invoke"><a href="#invoke" class="headerlink" title="invoke"></a>invoke</h4><blockquote>
+<p>invoke 的作用是执行方法，它的第一个参数是:</p>
+<ul>
+<li>如果这个方法是一个普通方法，那么第一个参数是类对象</li>
+<li>如果这个方法是一个静态方法，那么第一个参数是类</li>
+</ul>
+</blockquote>
+<p>观察上面的POC1符合这个原则</p>
+<blockquote>
+<p>我们正常执行方法是 [1].method([2], [3], [4]…) ，其实在反射里就是method.invoke([1], [2], [3], [4]…) 。</p>
+</blockquote>
+<h3 id="03-反射的几个进阶技巧"><a href="#03-反射的几个进阶技巧" class="headerlink" title="03.反射的几个进阶技巧"></a>03.反射的几个进阶技巧</h3><p>具体看原文吧，p神讲得很清楚了，没啥特别需要记录的</p>
+<h4 id="getConstructor"><a href="#getConstructor" class="headerlink" title="getConstructor"></a>getConstructor</h4><p>p神在第2课遗留了问题</p>
+<blockquote>
+<p>如果一个类没有无参构造方法，也没有类似单例模式里的静态方法，我们怎样通过反射实例化该类呢?</p>
+</blockquote>
+<p>解决方案</p>
+<blockquote>
+<p>和 getMethod 类似， getConstructor 接收的参数是构造函数列表类型，因为构造函数也支持重载，</p>
+</blockquote>
+<p>所以必须用参数列表类型才能唯一确定一个构造函数。获取到构造函数后，我们使用 <code>newInstance</code> 来进行实例化。</p>
+<p>不过<code>getConstructor</code>只能拿到公有的构造函数。要获取私有的构造函数用<code>getDeclaredConstructor</code></p>
+<h4 id="ProcessBuilder"><a href="#ProcessBuilder" class="headerlink" title="ProcessBuilder"></a>ProcessBuilder</h4><p>补充通过反射利用<code>ProcessBuilder(String...)</code>这个构造函数执行命令的poc</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;java.lang.ProcessBuilder&quot;</span>);</span><br><span class="line">clazz.getMethod(<span class="string">&quot;start&quot;</span>).invoke(clazz.getConstructor(String[].class).newInstance(<span class="keyword">new</span> <span class="title class_">String</span>[][]&#123;&#123;<span class="string">&quot;open&quot;</span>,<span class="string">&quot;-a&quot;</span>,<span class="string">&quot;calculator&quot;</span>&#125;&#125;));</span><br></pre></td></tr></table></figure>
+
+<h4 id="getDeclaredMethod"><a href="#getDeclaredMethod" class="headerlink" title="getDeclaredMethod"></a>getDeclaredMethod</h4><blockquote>
+<p>getMethod 系列方法获取的是当前类中所有公共方法，包括从父类继承的方法</p>
+<p>getDeclaredMethod 系列方法获取的是当前类中“声明”的方法，是实在写在这个类里的，包括私有的方法，但从父类里继承来的就不包含了</p>
+</blockquote>
+<p>类似的还有getDeclaredConstructor可以获取私有的构造方法，可以用这个构造<code>java.lang.Runtime</code>的命令执行。</p>
+<h5 id="彩蛋"><a href="#彩蛋" class="headerlink" title="彩蛋"></a>彩蛋</h5><p>若依后台计划任务的触发点就是基于<code>getDeclaredMethod</code>，所以构造gadget的时候从父类继承的方法触发不到。</p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/19/Shiro%E8%B6%8A%E6%9D%83%E5%AD%A6%E4%B9%A02.0/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-20 23:36:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F-%E4%B8%80-%E5%8F%8D%E5%B0%84%E7%AF%87"><span class="toc-text">java安全漫谈观后感(一)-反射篇</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#00-%E5%89%8D%E8%A8%80"><span class="toc-text">00.前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#01-Java%E7%9A%84%E5%8A%A8%E6%80%81%E7%89%B9%E6%80%A7%E2%80%94%E2%80%94%E5%8F%8D%E5%B0%84"><span class="toc-text">01.Java的动态特性——反射</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8A%A8%E6%80%81%E7%89%B9%E6%80%A7"><span class="toc-text">动态特性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4%E7%A7%8D%E8%8E%B7%E5%8F%96%E2%80%9D%E7%B1%BB%E2%80%9D%E7%9A%84%E6%96%B9%E6%B3%95"><span class="toc-text">4种获取”类”的方法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%85%B8%E5%9E%8B%E7%9A%84%E7%94%A8%E5%8F%8D%E5%B0%84%E6%89%A7%E8%A1%8C%E7%B3%BB%E7%BB%9F%E5%91%BD%E4%BB%A4%E7%9A%84poc"><span class="toc-text">一个典型的用反射执行系统命令的poc</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#getClass"><span class="toc-text">getClass</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#02-%E5%8F%8D%E5%B0%84%E7%9A%84%E7%AE%80%E5%8D%95%E5%88%A9%E7%94%A8"><span class="toc-text">02.反射的简单利用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%A6%E5%8F%B7%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-text">$符号的作用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#newInstance"><span class="toc-text">newInstance</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F"><span class="toc-text">单例模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#invoke"><span class="toc-text">invoke</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#03-%E5%8F%8D%E5%B0%84%E7%9A%84%E5%87%A0%E4%B8%AA%E8%BF%9B%E9%98%B6%E6%8A%80%E5%B7%A7"><span class="toc-text">03.反射的几个进阶技巧</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#getConstructor"><span class="toc-text">getConstructor</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ProcessBuilder"><span class="toc-text">ProcessBuilder</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#getDeclaredMethod"><span class="toc-text">getDeclaredMethod</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%BD%A9%E8%9B%8B"><span class="toc-text">彩蛋</span></a></li></ol></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%80)-%E5%8F%8D%E5%B0%84%E7%AF%87 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F20%2Fjava%25E5%25AE%2589%25E5%2585%25A8%25E6%25BC%25AB%25E8%25B0%2588%25E8%25A7%2582%25E5%2590%258E%25E6%2584%259F(%25E4%25B8%2580)-%25E5%258F%258D%25E5%25B0%2584%25E7%25AF%2587%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/20/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%80)-%E5%8F%8D%E5%B0%84%E7%AF%87/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
