@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      java安全漫谈观后感(四)-CC1篇 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">java安全漫谈观后感(四)-CC1篇</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-23 21:55:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h1 id="java安全漫谈观后感-四-CC1篇"><a href="#java安全漫谈观后感-四-CC1篇" class="headerlink" title="java安全漫谈观后感(四)-CC1篇"></a>java安全漫谈观后感(四)-CC1篇</h1><h2 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h2><h3 id="Transformer"><a href="#Transformer" class="headerlink" title="Transformer"></a>Transformer</h3><blockquote>
+<p>Transformer是一个接口，它只有一个待实现的方法:</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">Transformer</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> Object <span class="title function_">transform</span><span class="params">(Object input)</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>整个cc链中常常用到的各种<code>Transformer</code>，例如<code>ChainedTransformer</code>，<code>ConstantTransformer</code>，<code>InvokerTransformer</code>等都可以用它们的<code>transform</code>方法搞事情。所以寻找能触发到这些<code>transform</code>方法的思路尤为重要。</p>
+<h4 id="触发transform-方法"><a href="#触发transform-方法" class="headerlink" title="触发transform()方法"></a>触发transform()方法</h4><h5 id="TransformedMap的put方法"><a href="#TransformedMap的put方法" class="headerlink" title="TransformedMap的put方法"></a>TransformedMap的put方法</h5><p><code>TransformedMap</code>在<strong>写入元素</strong>即put方法时可以触发</p>
+<blockquote>
+<p><code>TransformedMap</code>用于对Java标准数据结构Map做一个修饰，被修饰过的Map在添加新的元素时，将可以执行一个回调。我们通过下面这行代码对<code>innerMap</code>进行修饰，传出的<code>outerMap</code>即是修饰后的Map:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MapouterMap=TransformedMap.decorate(innerMap,keyTransformer, valueTransformer);</span><br></pre></td></tr></table></figure>
+
+<p>其中，<code>keyTransformer</code>是处理新元素的Key的回调，<code>valueTransformer</code>是处理新元素的value的回调。 我们这里所说的”回调“，并不是传统意义上的一个回调函数，而是一个实现了Transformer接口的类。</p>
+<p><code>TransformedMap</code>在转换Map的新元素时，就会调用transform方法，这个过程就类似在调用一个”回调函数“，这个回调的参数是原始对象。</p>
+</blockquote>
+<h5 id="LazyMap的get方法"><a href="#LazyMap的get方法" class="headerlink" title="LazyMap的get方法"></a>LazyMap的get方法</h5><blockquote>
+<p><code>LazyMap</code>是在其get方法中执行的 <code>factory.transform</code> 。其实这也好理解，LazyMap 的作用是“懒加载”，在get找不到值的时候，它会调用 <code>factory.transform</code> 方法去获取一个值</p>
+</blockquote>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421003359788.png" alt="image-20220421003359788"></p>
+<h3 id="ConstantTransformer"><a href="#ConstantTransformer" class="headerlink" title="ConstantTransformer"></a>ConstantTransformer</h3><p>作用就是<strong>把一个对象封装并在触发transform方法时返回这个对象</strong>。</p>
+<blockquote>
+<p>ConstantTransformer是实现了Transformer接口的一个类，它的过程就是在构造函数的时候传入一个 对象，并在transform方法将这个对象再返回:</p>
+</blockquote>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421003250389.png" alt="image-20220421003250389"></p>
+<blockquote>
+<p>所以他的作用其实就是包装任意一个对象，在执行回调时返回这个对象，进而方便后续操作。</p>
+</blockquote>
+<h3 id="InvokerTransformer"><a href="#InvokerTransformer" class="headerlink" title="InvokerTransformer"></a>InvokerTransformer</h3><p>利用<code>InvokerTransformer</code>的<code>transform</code>方法，可以<strong>执行任意input对象的任意方法</strong>，在反序列化情景即可以执行任意类的任意方法。</p>
+<blockquote>
+<p><code>InvokerTransformer</code>是实现了<code>Transformer</code>接口的一个类，这个类可以用来执行任意方法，这也是反序列化能执行任意代码的关键。</p>
+<p>在实例化这个<code>InvokerTransformer</code>时，需要传入三个参数，第一个参数是待执行的方法名，第二个参数是这个函数的参数列表的参数类型，第三个参数是传给这个函数的参数列表:</p>
+</blockquote>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421003212001.png" alt="image-20220421003212001"></p>
+<blockquote>
+<p>后面的回调transform方法，就是执行了input对象的iMethodName方法:</p>
+</blockquote>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421003234312.png" alt="image-20220421003234312"></p>
+<h3 id="ChainedTransformer"><a href="#ChainedTransformer" class="headerlink" title="ChainedTransformer"></a>ChainedTransformer</h3><p>前面介绍了<code>InvokerTransformer</code>可以执行任意input对象的任意方法，那怎么控制这个input对象为我们想调用的任意对象呢？这就轮到ChainedTransformer出场了。</p>
+<blockquote>
+<p>ChainedTransformer也是实现了Transformer接口的一个类，它的作用是将内部的多个Transformer串在一起。通俗来说就是，前一个回调返回的结果，作为后一个回调的参数传入</p>
+</blockquote>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421003136646.png" alt="image-20220421003136646"></p>
+<p>先看看前面介绍的<code>ConstantTransformer</code>，这个<code>Transformer</code>可以封装并返回一个对象，如果我们能封装一个<code>Runtime</code>对象那就可以返回到一个<code>Runtime</code>对象。那我们构造一个<code>Transformer</code>数组，先放入<code>ConstantTransformer</code>，利用这个<code>Transformer</code>封装返回一个<code>Runtime</code>对象，接着传入一个<code>InvokerTransformr</code>执行exec方法。然后我们把这个<code>transformer</code>数组作为<code>ChainedTransformer</code>构造函数的参数。</p>
+<p>观察<code>ChainedTransformer</code>代码可以分析出整个流程，<code>ConstantTransformer</code>触发<code>transform()</code>方法返回的<code>Runtime</code>对象正好可以作为<code>InvokerTransformr</code>的input对象，至此<code>InvokerTransformer</code>将可以使用<code>Runtime</code>对象的exec方法。</p>
+<h3 id="一个简单demo"><a href="#一个简单demo" class="headerlink" title="一个简单demo"></a>一个简单demo</h3><p>上面介绍了利用<code>ChainedTransformer</code>可以构造出利用<code>Runtime</code>对象执行系统命令的流程，但这一切都基于一个大前提，即得触发Transformer的transform方法。前面介绍了可以用TransformedMap和LazyMap分别触发，这里照着p神文章里的写法演示一下利用一系列Transformer构造系统命令执行的代码demo</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421003111521.png" alt="image-20220421003111521"></p>
+<h2 id="AnnotationInvocationHandler"><a href="#AnnotationInvocationHandler" class="headerlink" title="AnnotationInvocationHandler"></a>AnnotationInvocationHandler</h2><p>上述这个demo演示了利用一系列<code>Transformer</code>构造系统命令执行的过程。但是有个很大的问题，我们漏洞利用情景是java反序列化，我们得把整个上述流程弄成序列化数据，而且我们是不能像demo中一样随意执行<code>TransformedMap</code>的put方法，我们得找一个类能在反序列化过程中触发过这个put方法。</p>
+<p>CC1利用到的是<code>sun.reflect.annotation.AnnotationInvocationHandler</code>(8u71被改动后无法利用，所以得看8u71前的代码逻辑，我这里的是8u40，和p神的示范代码有一点点细微区别，但核心逻辑是一样的)</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421003049732.png" alt="image-20220421003049732"></p>
+<blockquote>
+<p><code>memberValues</code>就是反序列化后得到的Map，也即是经过了<code>TransformedMap</code>修饰的对象，这里利用Iterator遍历了它的所有元素，并依次设置值。在调用<code>setValue</code>设置值的时候涉及到为其中的Map添加新元素值，所以就会触发<code>TransformedMap</code>里注册的所有<code>transform()</code>方法，进而执行我们为其精心设计的恶意代码。</p>
+</blockquote>
+<p>即<code>AnnotationInvocationHandler#readObject</code>会触发到<code>TransformedMap#put</code>。</p>
+<p>所以，我们构造POC的时候，就需要创建一个<code>AnnotationInvocationHandler</code>对象，并将前面构造的 HashMap设置进来:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;</span>);</span><br><span class="line"><span class="type">Constructor</span> <span class="variable">construct</span> <span class="operator">=</span> clazz.getDeclaredConstructor(Class.class, Map.class);</span><br><span class="line">construct.setAccessible(<span class="literal">true</span>);</span><br><span class="line"><span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> construct.newInstance(Retention.class, outerMap);</span><br></pre></td></tr></table></figure>
+
+<p>上面调用反射来写的原因引用p神原话是：</p>
+<blockquote>
+<p>这里因为 sun.reflect.annotation.AnnotationInvocationHandler 是在JDK内部的类，不能直接使用new来实例化。我使用反射获取到了它的构造方法，并将其设置成外部可见的，再调用就可以实例化了。</p>
+</blockquote>
+<h3 id="反射写Transformer数组的原因"><a href="#反射写Transformer数组的原因" class="headerlink" title="反射写Transformer数组的原因"></a>反射写Transformer数组的原因</h3><p>尝试直接把上述部分代码生成的Object做序列化操作生成序列化数据</p>
+<p>发现报错如下:</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421003008751.png" alt="image-20220421003008751"></p>
+<p>原因是</p>
+<blockquote>
+<p>Java中不是所有对象都支持序列化，<strong>待序列化的对象和所有它使用的内部属性对象</strong>，必须都实现<code>Serializable</code>接口。而我们最早传<code>ConstantTransformer</code>的是<code>Runtime.getRuntime()</code> ，<code>Runtime</code>类是没有实现<code>java.io.Serializable</code>接口的，所以不允许被序列化。</p>
+<p>通过反射部分的知识学习可以了解到，利用java反射机制我们可以不直接使用一个类而获取到一个类对象。那么解决方案就是反射</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002917532.png" alt="image-20220421002917532"></p>
+<p>其实和demo最大的区别就是将 <code>Runtime.getRuntime()</code> 换成了 <code>Runtime.class</code> ，前者是一个 <code>java.lang.Runtime</code> 对象，后者是一个 <code>java.lang.Class</code> 对象。<strong>Class类有实现<code>Serializable</code>接口</strong>，所以可以被序列化。</p>
+</blockquote>
+<h3 id="为什么用到Retention-class"><a href="#为什么用到Retention-class" class="headerlink" title="为什么用到Retention.class"></a>为什么用到Retention.class</h3><p>改了<code>Transformer</code>数组的格式后能正常生成序列化数据了，直接放入<code>readObject</code>读取发现漏洞并没有触发</p>
+<blockquote>
+<p>这个实际上和<code>AnnotationInvocationHandler</code>类的逻辑有关，我们可以动态调试就会发现，在 <code>AnnotationInvocationHandler#readObject</code> 的逻辑中，有一个if语句对var7进行判断，只有在其不是null的时候才会进入里面执行setValue。</p>
+</blockquote>
+<p>p神大哥给出的解决思路:</p>
+<blockquote>
+<ol>
+<li><code>sun.reflect.annotation.AnnotationInvocationHandler </code>构造函数的第一个参数必须是 <code>Annotation</code>的子类，且其中必须含有至少一个方法，假设方法名是X</li>
+<li>被 <code>TransformedMap.decorate</code> 修饰的Map中必须有一个键名为X的元素</li>
+</ol>
+</blockquote>
+<p>而Retention类正好符合条件1，且有一个方法，名为value;所以为了再满足第二个条件，我们需要给Map中放入一个Key是value的元素</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002823282.png" alt="image-20220421002823282"></p>
+<p>至此一个基于TransformedMap的CC1完成了</p>
+<p>整体的Gadget Chain是</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220423004439198.png" alt="image-20220423004439198"></p>
+<p>核心步骤如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//            sun.reflect.annotation.AnnotationInvocationHandler.readObject()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.map.AbstractInputCheckedMapDecorator$MapEntry.setValue()</span></span><br><span class="line"><span class="comment">//                 		 org.apache.commons.collections.map.TransformedMap.checkSetValue()</span></span><br><span class="line"><span class="comment">//										 		org.apache.commons.collections.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                     		org.apache.commons.collections.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//														java.lang.reflect.Method.invoke()</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="关于8u71的改动"><a href="#关于8u71的改动" class="headerlink" title="关于8u71的改动"></a>关于8u71的改动</h3><blockquote>
+<p>在8u71以后大概是2015年12月的时候，Java 官方修改了 <code>sun.reflect.annotation.AnnotationInvocationHandler</code> 的<code>readObject</code>函数<a target="_blank" rel="noopener" href="http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/rev/f8a528d0379d">http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/rev/f8a528d0379d</a></p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002747891.png" alt="image-20220421002747891"></p>
+<p>对于这次修改，有些文章说是因为没有了<code>setValue</code>，其实原因和<code>setValue</code>关系不大。改动后，不再直接使用反序列化得到的Map对象，而是<strong>新建了一个LinkedHashMap对象，并将原来的键值添加进去</strong>。</p>
+</blockquote>
+<p>所以，<strong>后续对Map的操作都是基于这个新的LinkedHashMap对象，而原来我们精心构造的Map不再执行set或put操作</strong>，也就不会触发RCE了。</p>
+<p>p神提到的这个点很值得注意，因为确实网上一大堆盗版文章的说法都是没有setValue所以不行，但真实原因是<strong>新增了个Map对象而不会再用我们精心构造的Map</strong>。后续将学习基于<code>LazyMap#get</code>构造的CC1，这种触发<code>transform()</code>方法的方式不会涉及到set操作，但依然无法绕过8u71的改动，所以更近一步佐证了p神说法的正确性。</p>
+<h3 id="怎么触发LazyMap的get方法"><a href="#怎么触发LazyMap的get方法" class="headerlink" title="怎么触发LazyMap的get方法"></a>怎么触发LazyMap的get方法</h3><p>观察yso中原本的CC1可以发现和p神前面分析的基于<code>TransformedMap</code>的CC1不太一样，yso中用到的是<code>LazyMap</code>来触发<code>transform()</code>方法。然而<code>AnnotationInvocationHandler</code>这个类的<code>readObject</code>方法并没有直接触发到Map的get操作，幸运的是其invoke方法会触发到Map的get操作。</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002719725.png" alt="image-20220421002719725"></p>
+<p>至于怎么触发它的invoke方法，大哥们用到的是java对象代理这个技术。</p>
+<h4 id="java对象代理"><a href="#java对象代理" class="headerlink" title="java对象代理"></a>java对象代理</h4><p>可用于劫持一个对象内部的方法调用,常见用法如下:</p>
+<blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Map proxyMap=(Map)Proxy.newProxyInstance(Map.class.getClassLoader(),<span class="keyword">new</span> <span class="title class_">Class</span>[] &#123;Map.class&#125;, handler);</span><br></pre></td></tr></table></figure>
+
+<p><code>Proxy.newProxyInstance</code> 的第一个参数是ClassLoader，我们用默认的即可;第二个参数是我们需要代理的对象集合;第三个参数是一个实现了<code>InvocationHandler</code>接口的对象，里面包含了具体代理的逻辑。</p>
+</blockquote>
+<p>只要触发到任何对这个<code>proxyMap</code>的操作，都会触发到<code>handler</code>对象的<code>invoke</code>方法，具体情况可以参考下面的一个小demo</p>
+<h5 id="一个小demo"><a href="#一个小demo" class="headerlink" title="一个小demo"></a>一个小demo</h5><p>把p神例子里的代码抄过来,同时在invoke函数中加一个输出,方便判断哪些地方触发了invoke函数</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002655192.png" alt="image-20220421002655192"></p>
+<p>照搬p神的事例代码，同时给每一行前加一个输出用于判断哪几行触发了invoke方法</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002607714.png" alt="image-20220421002607714"></p>
+<p>run起来结果如下</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002553023.png" alt="image-20220421002553023"></p>
+<p>可以看到初始化<code>handler</code>时<code>invoke</code>方法并不会触发，但是如果对对象代理修饰的Map做get,put等操作，都会触发一次<code>handler``的invoke</code>方法。</p>
+<h4 id="完成基于LazyMap的cc1"><a href="#完成基于LazyMap的cc1" class="headerlink" title="完成基于LazyMap的cc1"></a>完成基于LazyMap的cc1</h4><blockquote>
+<p>我们回看<code>sun.reflect.annotation.AnnotationInvocationHandler</code>，会发现实际上这个类实际就是一个<code>InvocationHandler</code>，我们如果将这个对象用Proxy进行代理，那么在readObject的时候，只要调用任意方法，就会进入到 <code>AnnotationInvocationHandler#invoke</code>方法中，进而触发我们的<code>LazyMap#get</code> 。</p>
+</blockquote>
+<p>前面学习<code>AnnotationInvocationHandler</code>触发<code>TransformedMap#put</code>时也讲了，在<code>AnnotationInvocationHandler</code>做<code>readObject</code>时，会触发一系列对我们传入Map的get,put等操作，自然可以触发到<code>AnnotationInvocationHandler#invoke</code>方法。</p>
+<p>基于我们前面用<code>TransformedMap</code>实现的CC1，只需要改动几个地方就可以变成基于LazyMap实现，用<code>LazyMap</code>替换<code>TransformedMap</code>修饰transformerChain</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Map outerMap=LazyMap.decorate(innerMap,transformerChain);</span><br></pre></td></tr></table></figure>
+
+<p>实例化<code>AnnotationInvocationHandler</code>时强制类型转换为<code>InvocationHandler</code>(为了创建一个符合java对象代理条件的handler)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">InvocationHandler handler=(InvocationHandler) construct.newInstance(Retention.class, outerMap);</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>代理后的对象叫做proxyMap，但我们不能直接对其进行序列化，因为我们入口点是 sun.reflect.annotation.AnnotationInvocationHandler#readObject ，所以我们还需要再用AnnotationInvocationHandler对这个proxyMap进行包裹</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002508717.png" alt="image-20220421002508717"></p>
+</blockquote>
+<p>至此基于LazyMap的粗糙版CC1构造完成</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002439014.png" alt="image-20220421002439014"></p>
+<p>调用链如下:</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421225653605.png" alt="image-20220421225653605"></p>
+<p>梳理核心步骤：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//            sun.reflect.annotation.AnnotationInvocationHandler.readObject()</span></span><br><span class="line"><span class="comment">//                 sun.reflect.annotation.AnnotationInvocationHandler.invoke()</span></span><br><span class="line"><span class="comment">//                 		 org.apache.commons.collections.map.LazyMap.get()</span></span><br><span class="line"><span class="comment">//										 		org.apache.commons.collections.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                     		org.apache.commons.collections.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//														java.lang.reflect.Method.invoke()</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="优化gadget"><a href="#优化gadget" class="headerlink" title="优化gadget"></a>优化gadget</h3><p>yso中的cc1中还有几处额外的代码,分析一下作者大大的意图</p>
+<h4 id="最后才反射设置恶意的transformers"><a href="#最后才反射设置恶意的transformers" class="headerlink" title="最后才反射设置恶意的transformers"></a>最后才反射设置恶意的transformers</h4><p>看<a target="_blank" rel="noopener" href="https://github.com/frohoff/ysoserial/blob/master/src/main/java/ysoserial/payloads/CommonsCollections1.java">原版CC1</a>可以看到作者在整个流程最后才传入了恶意的transformers数组</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002300917.png" alt="image-20220421002300917"></p>
+<p>原因应该是P神分析的这个</p>
+<blockquote>
+<p>在使用Proxy代理了map对象后，我们在任何地方执行Map的方法就会触发Payload弹出计算器，所以，在本地调试代码的时候，因为调试器会在下面调用一些toString之类的方法，导致不经意间触发了命令。</p>
+<p>ysoserial对此有一些处理，它在POC的最后才将执行命令的<code>Transformer</code>数组设置到<code>transformerChain</code>中，原因是避免本地生成序列化流时触发命令执行(在调试程序的时候可能会触发一次<code>Proxy#invoke</code> )</p>
+</blockquote>
+<h4 id="额外增加的ConstantTransformer-1"><a href="#额外增加的ConstantTransformer-1" class="headerlink" title="额外增加的ConstantTransformer(1)"></a>额外增加的ConstantTransformer(1)</h4><p>观察yso中CC1可以看到在ysoserial中的<code>Transformer</code>数组，最后会增加了一个<code>ConstantTransformer(1)</code> 。p神猜测是用于隐藏日志。</p>
+<p>不加的时候是报错日志是:</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002221731.png" alt="image-20220421002221731"></p>
+<p><code>java.lang.UNIXProcess</code>明显是用于命令执行的底层类(即我们<code>Runtime.exec</code>执行命令的底层)，这些敏感类有点容易引起管理员怀疑。</p>
+<p>加了之后报错日志是:</p>
+<p><img src="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/image-20220421002234338.png" alt="image-20220421002234338"></p>
+<p>相对比较常见。</p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/22/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%89)-URLDNS%E7%AF%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-23 21:55:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F-%E5%9B%9B-CC1%E7%AF%87"><span class="toc-text">java安全漫谈观后感(四)-CC1篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="toc-text">前置知识</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Transformer"><span class="toc-text">Transformer</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%A7%A6%E5%8F%91transform-%E6%96%B9%E6%B3%95"><span class="toc-text">触发transform()方法</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#TransformedMap%E7%9A%84put%E6%96%B9%E6%B3%95"><span class="toc-text">TransformedMap的put方法</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#LazyMap%E7%9A%84get%E6%96%B9%E6%B3%95"><span class="toc-text">LazyMap的get方法</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ConstantTransformer"><span class="toc-text">ConstantTransformer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#InvokerTransformer"><span class="toc-text">InvokerTransformer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ChainedTransformer"><span class="toc-text">ChainedTransformer</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E7%AE%80%E5%8D%95demo"><span class="toc-text">一个简单demo</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#AnnotationInvocationHandler"><span class="toc-text">AnnotationInvocationHandler</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84%E5%86%99Transformer%E6%95%B0%E7%BB%84%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="toc-text">反射写Transformer数组的原因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8%E5%88%B0Retention-class"><span class="toc-text">为什么用到Retention.class</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8E8u71%E7%9A%84%E6%94%B9%E5%8A%A8"><span class="toc-text">关于8u71的改动</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%8E%E4%B9%88%E8%A7%A6%E5%8F%91LazyMap%E7%9A%84get%E6%96%B9%E6%B3%95"><span class="toc-text">怎么触发LazyMap的get方法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#java%E5%AF%B9%E8%B1%A1%E4%BB%A3%E7%90%86"><span class="toc-text">java对象代理</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%B0%8Fdemo"><span class="toc-text">一个小demo</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%8C%E6%88%90%E5%9F%BA%E4%BA%8ELazyMap%E7%9A%84cc1"><span class="toc-text">完成基于LazyMap的cc1</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%98%E5%8C%96gadget"><span class="toc-text">优化gadget</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%80%E5%90%8E%E6%89%8D%E5%8F%8D%E5%B0%84%E8%AE%BE%E7%BD%AE%E6%81%B6%E6%84%8F%E7%9A%84transformers"><span class="toc-text">最后才反射设置恶意的transformers</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%A2%9D%E5%A4%96%E5%A2%9E%E5%8A%A0%E7%9A%84ConstantTransformer-1"><span class="toc-text">额外增加的ConstantTransformer(1)</span></a></li></ol></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F23%2Fjava%25E5%25AE%2589%25E5%2585%25A8%25E6%25BC%25AB%25E8%25B0%2588%25E8%25A7%2582%25E5%2590%258E%25E6%2584%259F(%25E5%259B%259B)-CC1%25E7%25AF%2587%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
