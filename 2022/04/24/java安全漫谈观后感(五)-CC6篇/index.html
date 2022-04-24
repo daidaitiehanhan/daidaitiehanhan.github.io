@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      java安全漫谈观后感(五)-CC6篇 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">java安全漫谈观后感(五)-CC6篇</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-24 10:40:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h1 id="java安全漫谈观后感-五-CC6篇"><a href="#java安全漫谈观后感-五-CC6篇" class="headerlink" title="java安全漫谈观后感(五)-CC6篇"></a>java安全漫谈观后感(五)-CC6篇</h1><p>前面学习了CC1，可以知道其由于<code>sun.reflect.annotation.AnnotationInvocationHandler#readObject</code>逻辑变动导致Java 8u71后CC1失效。那高版本怎么打呢?很自然地该想到找一个类在其<code>readObject</code>流程中能直接或间接触发<code>LazyMap</code>的get方法或<code>TransformedMap</code>的put方法。p神提到CC6是为了解决java高版本利用问题而构造的利用链，那我们简单看看CC6是咋构造的</p>
+<h2 id="简化CC6"><a href="#简化CC6" class="headerlink" title="简化CC6"></a>简化CC6</h2><p>先看看yso中是怎么实现的，看看CC6的Gadget Chain</p>
+<p><img src="/2022/04/24/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%BA%94)-CC6%E7%AF%87/image-20220421161057209.png" alt="image-20220421161057209"></p>
+<p>首先从<code>org.apache.commons.collections.map.LazyMap.get()</code>到后面的<code>java.lang.Runtime.exec()</code>和CC1是完全一致的，因此可以判断这个gadget正是一个用新思路触发<code>LazyMap#get</code>的利用链。</p>
+<p>看着上面的调用链，可以大概猜猜可能的触发到<code>LazyMap#get</code>的过程：</p>
+<ul>
+<li><p><code>HashSet</code>的<code>readObject</code>方法会触发<code>HashMap</code>的<code>put</code>方法</p>
+</li>
+<li><p><code>HashMap</code>的<code>put</code>方法会触发到<code>HashMap</code>的<code>hash</code>方法</p>
+</li>
+<li><p><code>HashMap</code>的<code>hash</code>方法可以触发到<code>TiedMapEntry</code>的<code>hashCode</code>方法</p>
+</li>
+<li><p><code>TiedMapEntry</code>的<code>hashCode</code>方法触发到<code>TiedMapEntry</code>的<code>getValue</code>方法</p>
+</li>
+<li><p><code>TiedMapEntry</code>的<code>getValue</code>方法可以触发到<code>LazyMap</code>的<code>get</code>方法</p>
+</li>
+</ul>
+<h3 id="HashMap-readObject"><a href="#HashMap-readObject" class="headerlink" title="HashMap.readObject"></a>HashMap.readObject</h3><p>上面一整个流程，结合我们前面学习URLDNS时的收获：</p>
+<ul>
+<li><code>HashMap</code>的<code>readObject</code>方法会触发到<code>HashMap</code>自身的hash方法，进而可以触发到任意类的<code>hashCode</code>方法</li>
+</ul>
+<p>结合这一事实，我们理论上可以简化一下这个CC6。阅读p神的文章后发现文章正是基于这种思路对CC6做了一定简化。即从<code>HashMap</code>的<code>readObject</code>出发可以取得和yso中链一样的效果。</p>
+<p>HashMap的readObject逻辑会执行到</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">putVal(hash(key), key, value, <span class="literal">false</span>, <span class="literal">false</span>);</span><br></pre></td></tr></table></figure>
+
+<p>即对Map中的key做hash方法，进一步会执行到key的<code>hashCode</code>方法。看上面的Gadget Chain,可以推出使用了<code>TiedMapEntry</code>这个类作为Map的key。</p>
+<h3 id="TiedMapEntry"><a href="#TiedMapEntry" class="headerlink" title="TiedMapEntry"></a>TiedMapEntry</h3><p>看看TiedMapEntry这个类</p>
+<p><img src="/2022/04/24/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%BA%94)-CC6%E7%AF%87/image-20220421161644608.png" alt="image-20220421161644608"></p>
+<p>首先看看构造函数，可以传入一个Map和一个Object对象，这里的Map显然就可以传入我们<code>LazyMap</code>修饰后的恶意Map。</p>
+<p>它的<code>hashCode</code>方法可以触发到自身的<code>getValue</code>方法。其中的<code>getValue</code>取的是传入<code>TiedMapEntry</code>这个类的Map，并调用这个Map对象的get方法。显然如果我们构造函数处传入我们精心构造的恶意<code>LazyMap</code>这个Map，<code>TiedMapEntry</code>触发到<code>getValue</code>时会去触发这个<code>LazyMap</code>的get方法。至此整个CC6的利用链就连上了。</p>
+<h3 id="完整代码"><a href="#完整代码" class="headerlink" title="完整代码"></a>完整代码</h3><p><img src="/2022/04/24/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%BA%94)-CC6%E7%AF%87/image-20220421161927106.png" alt="image-20220421161927106"></p>
+<p>这里为了避免本地调试时触发代码执行，所以学yso一样在最后再放入恶意的<code>transformers</code>数组。其中有个坑点就是</p>
+<blockquote>
+<p>我们在把TiedMapEntry放进HashMap的过程中,HashMap.put方法一样会触发到HashMap的hash方法，因此会在put这个操作时就触发到了一次LazyMap.get的方法,即已经触发了一次我们放入的无害transformers链了,所以此时并没有触发命令执行，但实际上也对我们构造Payload产生了影响。</p>
+</blockquote>
+<p>参照p神给的思路调试可以发现</p>
+<p><img src="/2022/04/24/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%BA%94)-CC6%E7%AF%87/image-20220421162143674.png" alt="image-20220421162143674"></p>
+<p>即经过之前<code>HashMap</code>的put操作导致触发<code>LazyMap#get</code>，最终导致<code>LazyMap</code>中做了个key值，而由于存在这个key值，这里的if判断将返回true，不能正常进入到触发<code>transform()</code>的逻辑。</p>
+<p>所以解决其实也很简单，在HashMap的put操作破坏了LazyMap后，把LazyMap中多余的key值去掉即可。</p>
+<p>完整的调用链是</p>
+<p><img src="/2022/04/24/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%BA%94)-CC6%E7%AF%87/image-20220423004742516.png" alt="image-20220423004742516"></p>
+<p>整个调用链的核心步骤是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//            java.util.HashMap.readObject()</span></span><br><span class="line"><span class="comment">//                          java.util.HashMap.hash()</span></span><br><span class="line"><span class="comment">//                             org.apache.commons.collections.keyvalue.TiedMapEntry.hashCode()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.collections.map.LazyMap.get()</span></span><br><span class="line"><span class="comment">//                                          org.apache.commons.collections.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//                                                 java.lang.reflect.Method.invoke()</span></span><br><span class="line"><span class="comment">//                                                 java.lang.Runtime.exec()</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="CCK3"><a href="#CCK3" class="headerlink" title="CCK3"></a>CCK3</h3><p>看一下长亭师傅的CCK3</p>
+<p><img src="/2022/04/24/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%BA%94)-CC6%E7%AF%87/image-20220421162236226.png" alt="image-20220421162236226"></p>
+<p>可以看到我们上面的CC6原理和CCK3一样，唯一不同的是p神用的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">outerMap.remove(<span class="string">&quot;com.xxxbank&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>去恢复被HashMap.put破坏的LazyMap。</p>
+<p>CCK3是直接用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">outerMap.clear();</span><br></pre></td></tr></table></figure>
+
+<p>恢复</p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/23/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%9B%9B)-CC1%E7%AF%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-24 10:40:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F-%E4%BA%94-CC6%E7%AF%87"><span class="toc-text">java安全漫谈观后感(五)-CC6篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%AE%80%E5%8C%96CC6"><span class="toc-text">简化CC6</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#HashMap-readObject"><span class="toc-text">HashMap.readObject</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#TiedMapEntry"><span class="toc-text">TiedMapEntry</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%8C%E6%95%B4%E4%BB%A3%E7%A0%81"><span class="toc-text">完整代码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CCK3"><span class="toc-text">CCK3</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%BA%94)-CC6%E7%AF%87 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F24%2Fjava%25E5%25AE%2589%25E5%2585%25A8%25E6%25BC%25AB%25E8%25B0%2588%25E8%25A7%2582%25E5%2590%258E%25E6%2584%259F(%25E4%25BA%2594)-CC6%25E7%25AF%2587%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/24/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%BA%94)-CC6%E7%AF%87/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
