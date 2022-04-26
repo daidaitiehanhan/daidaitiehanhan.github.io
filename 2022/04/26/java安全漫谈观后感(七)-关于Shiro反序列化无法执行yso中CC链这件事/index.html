@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      2022/04/26/java安全漫谈观后感(七)-关于Shiro反序列化无法执行yso中CC链这件事/ 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">2022/04/26/java安全漫谈观后感(七)-关于Shiro反序列化无法执行yso中CC链这件事/</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-26 23:40:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h2 id="2022-x2F-04-x2F-26-x2F-java安全漫谈观后感-七-关于Shiro反序列化无法执行yso中CC链这件事-x2F"><a href="#2022-x2F-04-x2F-26-x2F-java安全漫谈观后感-七-关于Shiro反序列化无法执行yso中CC链这件事-x2F" class="headerlink" title="2022&#x2F;04&#x2F;26&#x2F;java安全漫谈观后感(七)-关于Shiro反序列化无法执行yso中CC链这件事&#x2F;"></a>2022&#x2F;04&#x2F;26&#x2F;java安全漫谈观后感(七)-关于Shiro反序列化无法执行yso中CC链这件事&#x2F;</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在早期攻击Shiro反序列化漏洞的时候有个现象，现实环境中的Shiro用yso工具中的CC链几乎没法做漏洞利用。p师傅在java安全漫谈系列中用一个Shirodemo的案例对这个现象做了分析。</p>
+<p>构造一段CC6生成的rememberMe串打过去，并没有正常如愿执行命令，同时服务端一堆报错。</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175221432.png" alt="image-20220421175221432"></p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175252917.png" alt="image-20220421175252917"></p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175308839.png" alt="image-20220421175308839"></p>
+<p>这里看到报错信息里有<code>[Lorg.apache.commons.collections.Transformer; </code>。这个类名看起来很奇怪，其实就是表示 <code>org.apache.commons.collections.Transformer</code>的数组。</p>
+<blockquote>
+<p>[L是一个JVM的标记，说明实际上这是一个数组，即Transformer[]</p>
+</blockquote>
+<h3 id="关于Jrmp"><a href="#关于Jrmp" class="headerlink" title="关于Jrmp"></a>关于Jrmp</h3><p>当如果目标出网，我们换成JRMP相关的gadget之后可以神奇地发现CC链这些之前打不了的链突然就能用了。这点在Orange师傅的一篇文章(<a target="_blank" rel="noopener" href="http://blog.orange.tw/2018/03/pwn-ctf-platform-with-java-jrmp-gadget.html">http://blog.orange.tw/2018/03/pwn-ctf-platform-with-java-jrmp-gadget.html</a>)中也有体现。</p>
+<p>jrmp这个gadget其实也相对比较简单好理解，我们可以随便搜点文章学习下，学了之后我们可以大概知道jrmp相当于<strong>利用rmi创建了一个新的反序列化场景</strong>，那为什么新弄一个反序列化情景就可以正常用CC链了呢?可以关注到这个新的反序列化场景默认是用java原生的反序列化。这里就能给到我们一点提示了，难道Shiro反序列化的反序列化流程不是java原生的吗?中间有什么关键方法被重写了吗?</p>
+<p>看到前面的报错中有一个</p>
+<blockquote>
+<p>org.apache.shiro.util.ClassUtils.forName(ClassUtils.java:148)</p>
+</blockquote>
+<p><code>ClassUtils.forName</code>似乎就并不像java原生的<code>Class.forName</code>。找漏洞触发点仔细看看</p>
+<h3 id="机缘巧下的CC链”WAF”"><a href="#机缘巧下的CC链”WAF”" class="headerlink" title="机缘巧下的CC链”WAF”"></a>机缘巧下的CC链”WAF”</h3><p>直接全局搜<code>readObject</code>在<code>org.apache.shiro.io.DefaultSerializer</code>找到触发点，在这里下个断点并构造一段CC6生成的rememberMe串打过去</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175336429.png" alt="image-20220421175336429"></p>
+<p>停住了可以确定这里正是shiro-550的漏洞触发点。</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175359324.png" alt="image-20220421175359324"></p>
+<p>先不跟进，尝试静态看看，可以看到在触发<code>readObject</code>前有一个<code>ClassResolvingObjectInputStream</code>类，进去看一眼这个类是干嘛的</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175413679.png" alt="image-20220421175413679"></p>
+<p>可以看到这个类继承自<code>ObjectInputStram</code>类，重写了其中的<code>resolveClass</code>方法</p>
+<blockquote>
+<p>resolveClass 是反序列化中用来查找类的方法，简单来说，读取序列化流的时候，读到一个字符串形 式的类名，需要通过这个方法来找到对应的 java.lang.Class 对象。</p>
+</blockquote>
+<p>对比下它父类的resolveClass</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175431717.png" alt="image-20220421175431717"></p>
+<p><strong>可以看到原版<code>resolveClass</code>方法直接就是<code>Class.forName</code>而Shiro中重写后是<code>ClassUtils.forName</code>，</strong> 跟进<code>ClassUtils.forName</code></p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175450848.png" alt="image-20220421175450848"></p>
+<p>继续跟进</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175502891.png" alt="image-20220421175502891"></p>
+<p>即<code>ClassUtils.forName</code>其实用的是**<code>ExceptionIgnoringAccessor.loadClass</code>**</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175515081.png" alt="image-20220421175515081"></p>
+<p>可以发现这里会有个<code>getClassLoader</code>操作，然后会用这里拿到的<code>Classloader</code>做<code>loadClass</code>操作。<strong>注意这里在不同中间件上下文环境中拿到的类加载器是不一样</strong>。</p>
+<p>以p神的<a target="_blank" rel="noopener" href="https://github.com/phith0n/JavaThings/tree/master/shirodemo">shirodemo</a>为例,调试可以发现<code>ExceptionIgnoringAccessor#loadClass</code>在tomcat中的实现是<code>ParallelWebappClassLoader#loadClass</code></p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175540740.png" alt="image-20220421175540740"></p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175553767.png" alt="image-20220421175553767"></p>
+<p>看看这里的<code>loadClass</code>和<code>Class.forName</code>是否有差异</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175612316.png" alt="image-20220421175612316"></p>
+<p>可以明显看到我们用<code>loadClass</code>会触发报错而原版的<code>Class.forName</code>却能正常执行。那我们看看<code>Class.forName</code>用的哪个<code>ClassLoader</code>?</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175629934.png" alt="image-20220421175629934"></p>
+<p>这就很神奇了，这里<code>Class.forName</code>用的竟然还是<code>ParallelWebappClassLoader.loadClass</code>。那为啥我们同样的<code>ParallelWebappClassLoader.loadClass</code>一个能成功一个却要报错呢？看看<code>ParallelWebappClassLoader</code>的loadClass方法实现。</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175650638.png" alt="image-20220421175650638"></p>
+<p>官方文档显示<code>ParallelWebappClassLoader</code>的<code>loadClass</code>方法继承自 <code>org.apache.catalina.loader.WebappClassLoaderBase</code></p>
+<p>跟下这个方法</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175710987.png" alt="image-20220421175710987"></p>
+<p><code>loadClass(String)</code>等于<code>loadClass(String, False)</code></p>
+<p><code>loadClass(String, boolean)</code>正是我们最终用到的<code>loadClass</code></p>
+<p>官方文档把整个方法涉及的操作分成了4点，但我看了下源码感觉严格来说是5个操作</p>
+<ul>
+<li><strong>用<code>findLoadedClass(String)</code>方法检查当前这个name的Class是否已经加载，如果已经加载则返回相同的Class对象.</strong></li>
+</ul>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175726883.png" alt="image-20220421175726883"></p>
+<p>鉴于我们现在是第一次加载所以这里的clazz肯定是null</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175743200.png" alt="image-20220421175743200"></p>
+<ul>
+<li><strong>尝试从javase的lib路径中去找Class</strong></li>
+</ul>
+<p>首先把我们传入的name利用<code>binaryNameToPath</code>方法转成path形式，可以看到此时的<code>resourceName</code>值为<code>[Lorg/apache/commons/collections/Transformer;.class</code>。这里出现了一个新概念<strong>ucp(URLClassPath)，大概就是用于从其中找到我们想要找的类</strong>，同时可以看到这里的<code>javaseLoader</code>中的ucp(URLClassPath)是我们当前的jre中的lib路径，显然是不会有<code>[Lorg/apache/commons/collections/Transformer;.class</code>这个路径的…然后我们一直往后跟可以发现它会走一系列逻辑并尝试从path中去找到<code>[Lorg/apache/commons/collections/Transformer;.class</code>这个值，所以我们本地是没法找到这个Class的</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175832501.png" alt="image-20220421175832501"></p>
+<ul>
+<li><strong>检查当前的delegate属性是否设置成true，如果是true就用Parent Classloader去找Class。</strong>我们这个过程中delegateLoad是false,所以不用管。</li>
+</ul>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175851460.png" alt="image-20220421175851460"></p>
+<ul>
+<li><strong>尝试用findClass()方法在我们本地仓库找Class</strong>，先后用了<code>findClassInternal()</code>方法和<code>URLClassLoader</code>的<code>findClass()</code>方法</li>
+</ul>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421175945410.png" alt="image-20220421175945410"></p>
+<p>跟<code>findClass</code>方法，慢慢跟会遇到<code>findClassInternal()</code>方法，<strong>可以看到<code>this.resourceEntries</code>是有<code>/org/apache/commons/collections/Transformer.class</code>的，然而我们这里传入的name转成path去找的是<code>[Lorg/apache/commons/collections/Transformer;.class</code>。所以这里是不可能找到Class的。</strong></p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421180004687.png" alt="image-20220421180004687"></p>
+<p>如果<code>findClassInternal()</code>方法没找到，就用super.findClass再找一遍这里最后会调用<code>URLClassLoader</code>的<code>findClass()</code>方法.</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421180020228.png" alt="image-20220421180020228"></p>
+<p>该方法会在之前提到的ucp中去找path，这里path值还是那种数组的形式，所以依然不可能找到</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421180035325.png" alt="image-20220421180035325"></p>
+<ul>
+<li><strong>如果上述步骤都找不到Class，会用<code>Class.forName</code>去触发父类加载器的<code>loadClass()</code>方法</strong>，在这里即是<code>URLClassLoader</code>的<code>loadClass</code>方法。</li>
+</ul>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421180050843.png" alt="image-20220421180050843"></p>
+<p>可以看到这里就是个普通的<code>Class.forName</code>，不过指定的类加载器是<code>URLClassLoader</code>。</p>
+<p>调试调试</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421180106686.png" alt="image-20220421180106686"></p>
+<p>可以看到<strong>使用<code>Class.forName</code>时，当类加载器是<code>URLClassLoader</code>会报错，但当类加载器是ParallelWebappClassLoader时就能正常执行.</strong></p>
+<p>至此大概应该是逮到内鬼了，应该<strong>问题就出在这个tomcat环境下的URLClassLoader</strong>。</p>
+<p>一路跟会<code>Class.forName</code>里面的操作，跟到<code>ClassLoader.loadClass</code>方法</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421180127694.png" alt="image-20220421180127694"></p>
+<p>有两点值得关注</p>
+<ol>
+<li><p><strong><code>Class.forName</code>后name的数组形式改回正常的格式了</strong></p>
+</li>
+<li><p><strong>ucp路径只有tomcat的lib目录</strong></p>
+</li>
+</ol>
+<p>可以看到最后在<code>URLClassLoader</code>中name是正常的，那生成的path也是正常的，可是从报错信息可以看出依然没找到Class</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421180149507.png" alt="image-20220421180149507"></p>
+<p>其实是因为这里<strong>类加载器URLClassLoader中ucp路径只有tomcat的lib目录</strong>，没有我们web目录的依赖包，所以找不到。</p>
+<p>如果给<code>URLClassLoader</code>指定CC包，可以看到又能正常找到class了。</p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421180207795.png" alt="image-20220421180207795"></p>
+<p><strong>而tomcat配shiro情景下的<code>URLCLassLoader</code>的ucp只有tomcat的lib，所以找不到我们需要的Class.</strong></p>
+<p>我们前面当类加载器是<code>ParallelWebappClassLoader</code>时直接<code>Class.forName</code>也能正常加载到Class，原因大概是因为<strong>当<code>Class.forName</code>走到<code>ClassLoader.loadClass</code>方法时，我们传入的name其实已经从数组格式变回正常形式了，所以这里就变成了调用<code>ParallelWebappClassLoader.loadClass</code>去找<code>org.apache.commons.collections.Transformer</code>这个类</strong>，而我们刚刚分析了<code>ParallelWebappClassLoader.loadClass</code>的流程可以发现之前本地仓库中是有<code>org.apache.commons.collections.Transformer</code>这个类的，所以我们是可以在本地找到这个类的，自然就能正常加载了。</p>
+<h3 id="loadClass不支持数组"><a href="#loadClass不支持数组" class="headerlink" title="loadClass不支持数组?"></a>loadClass不支持数组?</h3><p>更早之前网上一直流传着一种说法来描述Shiro无法正常执行cc链，目测是<a target="_blank" rel="noopener" href="http://blog.orange.tw/2018/03/pwn-ctf-platform-with-java-jrmp-gadget.html">orange师傅文章下的评论</a>流传开的</p>
+<blockquote>
+<p><code>Class.forName</code>支持加载数组，而<code>ClassLoader.loadClass</code>不支持加载数组</p>
+</blockquote>
+<p>显然现在来看这个描述并不准确。loadClass理论上来说似乎确实并不支持数组，可是Shiro情景中的loadClass是支持数组的(具体原因就是上面的分析，如果<strong>本地找不到Class会触发一个<code>Class.forName</code>操作，通过<code>Class.forName</code>操作会把我们数组格式的name改回正常格式，所以其实是能支持部分数组的</strong>)</p>
+<p>如下图，其实可以直接loadClass数组，例如jdk自带的<code>java.lang.String</code>的数组就能正常的<code>loadClass</code></p>
+<p><img src="/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/image-20220421180308935.png" alt="image-20220421180308935"></p>
+<p>所以更准确的描述应该是p神在知识星球中提到的</p>
+<blockquote>
+<p><strong>如果反序列化流中包含非Java自身的数组，则会出现无法加载类的错误。</strong></p>
+</blockquote>
+<p>总结我们加载class失败的原因</p>
+<ul>
+<li><p><strong>当我们在本地加载class的时候，由于我们的path是数组形式，所以即使我们本地仓库有cc包，但是由于path名字过于奇怪而无法正常加载。</strong></p>
+</li>
+<li><p><strong>而后URLClassLoader加载class时path是正常的，可是由于tomcat的classpath默认只有tomcat自带的lib目录，导致URLClassPath中没有我们本地仓库的依赖包。</strong></p>
+</li>
+</ul>
+<p>现在主流的解决方案是选择不使用数组形式的gadget，例如yso中原版的CC链只有CC2和CC4可以用，但它们都是<code>org.apache.commons:commons-collections4:4.0</code>，所以实战中基本上打不了。网上很多文章都提到的<a target="_blank" rel="noopener" href="https://blog.knownsec.com/2016/08/apache-shiro-java/">这篇文章</a>里作者加了CC4这个包后能很正常的用CC2复现漏洞，也是因为CC2并没有用数组形式。</p>
+<p>目前已知公开增加的一些适配Shiro的CC链都是不使用数组的gadget。例如观察后面大哥们公开的<a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/192619">CC10</a>和<a target="_blank" rel="noopener" href="https://paper.seebug.org/1285/">CCK1和CCK2</a>，它们都不会用到数组，所以实战中Shiro反序列化能用这些CC链大开杀戒。</p>
+<h3 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h3><p><a target="_blank" rel="noopener" href="https://blog.zsxsoft.com/post/35">https://blog.zsxsoft.com/post/35</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/192619">https://www.anquanke.com/post/id/192619</a></p>
+<p><a target="_blank" rel="noopener" href="http://blog.orange.tw/2018/03/pwn-ctf-platform-with-java-jrmp-gadget.html">http://blog.orange.tw/2018/03/pwn-ctf-platform-with-java-jrmp-gadget.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://t.zsxq.com/JAUBmMz">https://t.zsxq.com/JAUBmMz</a></p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/25/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AD)-CC3%E7%AF%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-26 23:40:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#2022-x2F-04-x2F-26-x2F-java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F-%E4%B8%83-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B-x2F"><span class="toc-text">2022&#x2F;04&#x2F;26&#x2F;java安全漫谈观后感(七)-关于Shiro反序列化无法执行yso中CC链这件事&#x2F;</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-text">背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8EJrmp"><span class="toc-text">关于Jrmp</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9C%BA%E7%BC%98%E5%B7%A7%E4%B8%8B%E7%9A%84CC%E9%93%BE%E2%80%9DWAF%E2%80%9D"><span class="toc-text">机缘巧下的CC链”WAF”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#loadClass%E4%B8%8D%E6%94%AF%E6%8C%81%E6%95%B0%E7%BB%84"><span class="toc-text">loadClass不支持数组?</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="toc-text">参考文献</span></a></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + 2022%2F04%2F26%2Fjava%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B%2F + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F26%2Fjava%25E5%25AE%2589%25E5%2585%25A8%25E6%25BC%25AB%25E8%25B0%2588%25E8%25A7%2582%25E5%2590%258E%25E6%2584%259F(%25E4%25B8%2583)-%25E5%2585%25B3%25E4%25BA%258EShiro%25E5%258F%258D%25E5%25BA%258F%25E5%2588%2597%25E5%258C%2596%25E6%2597%25A0%25E6%25B3%2595%25E6%2589%25A7%25E8%25A1%258Cyso%25E4%25B8%25ADCC%25E9%2593%25BE%25E8%25BF%2599%25E4%25BB%25B6%25E4%25BA%258B%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/26/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B8%83)-%E5%85%B3%E4%BA%8EShiro%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%97%A0%E6%B3%95%E6%89%A7%E8%A1%8Cyso%E4%B8%ADCC%E9%93%BE%E8%BF%99%E4%BB%B6%E4%BA%8B/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
