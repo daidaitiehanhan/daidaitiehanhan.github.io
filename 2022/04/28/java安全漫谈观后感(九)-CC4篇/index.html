@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      java安全漫谈观后感(九)-CC4篇 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">java安全漫谈观后感(九)-CC4篇</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-28 23:30:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h1 id="java安全漫谈观后感-九-CC4篇"><a href="#java安全漫谈观后感-九-CC4篇" class="headerlink" title="java安全漫谈观后感(九)-CC4篇"></a>java安全漫谈观后感(九)-CC4篇</h1><h2 id="关于commons-collections4"><a href="#关于commons-collections4" class="headerlink" title="关于commons-collections4"></a>关于commons-collections4</h2><p>commons-collections4很多地方不再兼容以前commons-collections3.x，而且在配置pom.xml时commons-collections4和commons-collections3.2.1可以共存，所以意义上来说几乎可以算一个新的包了。新的包名是org.apache.commons.collections4</p>
+<h3 id="commons-collections4还能用以前commons-collections3-2-1的gadget吗？"><a href="#commons-collections4还能用以前commons-collections3-2-1的gadget吗？" class="headerlink" title="commons-collections4还能用以前commons-collections3.2.1的gadget吗？"></a>commons-collections4还能用以前commons-collections3.2.1的gadget吗？</h3><h4 id="commons-collections4的CC1"><a href="#commons-collections4的CC1" class="headerlink" title="commons-collections4的CC1"></a>commons-collections4的CC1</h4><p>把以前的CC1照抄过来，把包名全部换成org.apache.commons.collections4，发现报错，跟进看看</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003218369.png" alt="image-20220422003218369"></p>
+<p>发现<code>TransformedMap</code>的<code>decorate</code>方法没了，但是有个新的<code>transformingMap</code></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003231581.png" alt="image-20220422003231581"></p>
+<p>对比一下commons-collections3.2.1中的<code>decorate</code>方法，发现效果是一样的</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003246340.png" alt="image-20220422003246340"></p>
+<p>所以直接把报错那行代码换一下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Map</span> <span class="variable">outerMap</span> <span class="operator">=</span> TransformedMap.transformingMap(innerMap, <span class="literal">null</span>, transformerChain);</span><br></pre></td></tr></table></figure>
+
+<p>可以正常执行了</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003308066.png" alt="image-20220422003308066"></p>
+<p>以上是基于TransformedMap触发的CC1，LazyMap的CC1同理，直接改一样有个报错</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003330460.png" alt="image-20220422003330460"></p>
+<p>把报错这行换个名字：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Map outerMap= LazyMap.lazyMap(innerMap,transformerChain);</span><br></pre></td></tr></table></figure>
+
+<p>正常触发</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003348950.png" alt="image-20220422003348950"></p>
+<h4 id="commons-collections4的CC6"><a href="#commons-collections4的CC6" class="headerlink" title="commons-collections4的CC6"></a>commons-collections4的CC6</h4><p>一样改下报错那一行即可:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Map outerMap= LazyMap.lazyMap(innerMap,transformerChain);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003429432.png" alt="image-20220422003429432"></p>
+<p>值得一提的是对比一下长亭师傅的CCK4可以发现是一样的原理</p>
+<h4 id="commons-collections4的CC3"><a href="#commons-collections4的CC3" class="headerlink" title="commons-collections4的CC3"></a>commons-collections4的CC3</h4><p>和前面一样的改动</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003452052.png" alt="image-20220422003452052"></p>
+<h4 id="commons-collections4的无数组CC"><a href="#commons-collections4的无数组CC" class="headerlink" title="commons-collections4的无数组CC"></a>commons-collections4的无数组CC</h4><p>和前面一样的改动</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003514127.png" alt="image-20220422003514127"></p>
+<p>可以看到长亭师傅的CCK2就是这样弄的</p>
+<h3 id="CommonsCollections2"><a href="#CommonsCollections2" class="headerlink" title="CommonsCollections2"></a>CommonsCollections2</h3><p>看看ysoserial中的CommonsCollections2和CommonsCollections4可以发现它并不是像我们上面那样实现的，那我们以CommonsCollections2为例看看它干了啥</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003532782.png" alt="image-20220422003532782"></p>
+<p>看作者写的Gadget Chain</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003551819.png" alt="image-20220422003551819"></p>
+<p>可以看到关键点应该是在<code>PriorityQueue.readObject()</code>和<code>TransformingComparator.compare()</code>。其中<code>PriorityQueue</code>显然是作为我们反序列化的入口点，可以最终调用到<code>TransformingComparator.compare()</code>方法。</p>
+<h4 id="TransformingComparator-compare"><a href="#TransformingComparator-compare" class="headerlink" title="TransformingComparator.compare()"></a>TransformingComparator.compare()</h4><p>通过学习前面的commons-collections链可以知道commons-collections这一系列的关键正是可以触发到各种<code>Transformer</code>的<code>transform()</code>方法，达到任意方法调用的效果。我们之前学习了<code>LazyMap.get</code>或<code>TransformMap.put</code>都可以触发<code>transform()</code>方法，看这个CommonsCollections2的Gadget Chain，不出意外<code>TransformingComparator.compare()</code>应该也可以触发transform()方法。跟进看看</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003625500.png" alt="image-20220422003625500"></p>
+<p>可以发现确实如此，<code>TransformingComparator.compare()</code>可以触发<code>transformer</code>的<code>transform()</code>方法。</p>
+<p>我们还可以发现，<code>compare()</code>方法传入的参数obj1,obj2会被当作<code>transform()</code>方法的input值，且一个队列会做出<code>compare</code>行为，很明显是使用queue中的元素做compare操作。通过前面的对构造无数组CommonsCollections链的学习，我们应该敏感地察觉到这里有构造一个新的无数组CommonsCollections链的潜力。</p>
+<h4 id="PriorityQueue-readObject"><a href="#PriorityQueue-readObject" class="headerlink" title="PriorityQueue.readObject()"></a>PriorityQueue.readObject()</h4><p>我们再看眼<code>PriorityQueue.readObject()</code>的整个流程，看看它是怎么触发到<code>TransformingComparator.compare()</code>方法的。</p>
+<p>首先进入<code>PriorityQueue.readObject()</code>会触发到<code>heapify()</code></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003648957.png" alt="image-20220422003648957"></p>
+<p>跟，触发到<code>siftDown()</code></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003711840.png" alt="image-20220422003711840"></p>
+<p>跟，发现设置<code>comparator</code>与否逻辑有些许不同</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003727819.png" alt="image-20220422003727819"></p>
+<p>分别对比一下这两个函数逻辑，先看<code>siftDownComparable</code></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003745081.png" alt="image-20220422003745081"></p>
+<p>再看<code>siftDownUsingComparator</code></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003817875.png" alt="image-20220422003817875"></p>
+<p>发现只有<code>siftDownUsingComparator()</code>时才会触发到<code>comparator.compare()</code>。同时可以发现<code>PriorityQueue</code>的构造函数可以传参控制<code>comparator</code></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003928650.png" alt="image-20220422003928650"></p>
+<p>至此整个gadget就很清晰了，指定我们的comparator为<code>TransformingComparator</code>即可把整个路径连起来。</p>
+<h4 id="使用数组的CommonsCollections2"><a href="#使用数组的CommonsCollections2" class="headerlink" title="使用数组的CommonsCollections2"></a>使用数组的CommonsCollections2</h4><p>构造gadget，数组链就取我们前面经常用的即可。</p>
+<p>新建一个TransformingComparator对象，传入构造好的<code>Transformer</code>数组</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Comparator comparator=<span class="keyword">new</span> <span class="title class_">TransformingComparator</span>(transformerChain);</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>实例化<code>PriorityQueue</code>对象，第一个参数是初始化时的大小，至少需要2个元素才会触发排序和比较， 所以是2;第二个参数是比较时的<code>Comparator</code>，传入前面实例化的<code>comparator</code></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422003957977.png" alt="image-20220422003957977"></p>
+<p>后面随便添加了2个数字进去，这里可以传入非null的任意对象，因为我们的<code>Transformer</code>是忽略传入参数的。</p>
+</blockquote>
+<p>序列化<code>PriorityQueue</code>对象并反序列化触发，成功弹出计算器，而且会弹两次，因为<code>TransformingComparator.compare()</code>这里调用了两次<code>transform()</code>。</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004023928.png" alt="image-20220422004023928"></p>
+<p>这种用数组实现的CC2调用链是</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220423003111517.png" alt="image-20220423003111517"></p>
+<p>梳理核心步骤</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//            java.util.PriorityQueue.readObject()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.heapify()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.siftDown()</span></span><br><span class="line"><span class="comment">//								java.util.PriorityQueue.siftDownUsingComparator()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.collections4.comparators.TransformingComparator.compare()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections4.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                     	  org.apache.commons.collections4.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//                            java.lang.Runtime.exec()</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="不使用数组的CommonsCollections2"><a href="#不使用数组的CommonsCollections2" class="headerlink" title="不使用数组的CommonsCollections2"></a>不使用数组的CommonsCollections2</h4><p>不使用数组很自然想到使用我们前面学的CCK1，但CCK1触发<code>transform()</code>方法是利用<code>LazyMap.get()</code>。而我们前面提到了<code>TransformingComparator.compare()</code>方法在触发<code>transform()</code>时可以传参，且在<code>transform()</code>这里下断点，可以看到传入transform()的是我们queue的元素。</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004050525.png" alt="image-20220422004050525"></p>
+<p>那如果我们queue传入<code>TemplatesImpl</code>对象，再用<code>InvokerTransformer</code>触发<code>newTransformer</code>方法就可以构成一个新的gadget。</p>
+<p>直接把刚刚基于数组的CommonsCollections2抄过来，把前面构造恶意transformer数组换成一个恶意的TemplatesImpl对象。</p>
+<p>一样先<code>InvokerTransformer</code>触发一个人畜无害的方法，避免在序列化时触发了gadget。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Transformer</span> <span class="variable">itransformer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;toString&quot;</span>, <span class="literal">null</span>,<span class="literal">null</span>);</span><br></pre></td></tr></table></figure>
+
+<p>同时创建一个PriorityQueue对象，并放入我们构造的TemplatesImpl对象</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> PriorityQueue&lt;Object&gt; queue = <span class="keyword">new</span> <span class="title class_">PriorityQueue</span>&lt;Object&gt;(<span class="number">2</span>,<span class="keyword">new</span> <span class="title class_">TransformingComparator</span>(itransformer));</span><br><span class="line">queue.add(obj);</span><br><span class="line">queue.add(obj);</span><br></pre></td></tr></table></figure>
+
+<p>最后反射把<code>InvokerTransformer</code>的方法改回<code>newTransformer</code></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004129846.png" alt="image-20220422004129846"></p>
+<h4 id="ysoserial的CommonsCollections2"><a href="#ysoserial的CommonsCollections2" class="headerlink" title="ysoserial的CommonsCollections2"></a>ysoserial的CommonsCollections2</h4><p>先直接看眼ysoserial代码</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004147629.png" alt="image-20220422004147629"></p>
+<p>大致思路和我们上面是一致的,唯一不同是最后通过反射把queue中的第一个元素改成了我们构造的TemplatesImpl对象。</p>
+<p>这种官方版的CC2调用链是</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220423003608581.png" alt="image-20220423003608581"></p>
+<p>梳理核心步骤</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//            java.util.PriorityQueue.readObject()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.heapify()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.siftDown()</span></span><br><span class="line"><span class="comment">//								java.util.PriorityQueue.siftDownUsingComparator()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.collections4.comparators.TransformingComparator.compare()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections4.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//                            com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl.newTransformer()</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="为啥反射改queueArray-0"><a href="#为啥反射改queueArray-0" class="headerlink" title="为啥反射改queueArray[0]"></a>为啥反射改queueArray[0]</h5><p>看到yso中这个写法我第一反应是因为<code>transform()</code>会分别在queue中的两个元素各触发一次，这样写似乎是为了避免多次触发gadget。</p>
+<p>然而我调完上面不使用数组的CommonsCollections2后，我<code>queue.add</code>了两个TemplatesImpl对象obj，但是只弹出来了一次计算器。在<code>transform()</code>方法下断点debug发现了原因:</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004228889.png" alt="image-20220422004228889"></p>
+<p>在触发transform(obj1)时，执行命令弹出计算器后，由于逻辑问题会抛出异常，因此不会再触发transform(obj2)。</p>
+<p>即我们gadget中只有queue的第一个元素会触发transform()方法。</p>
+<p>所以ysoserial中反射修改的是queue中的第一个元素值，甚至完全不用管第二个元素值是多少都行，因为反正不会再触发transform()。</p>
+<p>同理,如果我们尝试在添加队列元素时，只传入一个TemplatesImpl对象</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004252587.png" alt="image-20220422004252587"></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004306889.png" alt="image-20220422004306889"></p>
+<p>上述不管哪种写法，都会抛出报错</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004316719.png" alt="image-20220422004316719"></p>
+<p>因为queue在序列化时经过compare处理后做了排序，我们传入的int(1)在排序后会位于queue的第一个元素，同理尝试了java.lang.Class也会拍到第一个元素，我们构造的TemplatesImpl对象位于queue中第二个元素，因此不能正常触发transform()。</p>
+<p>举个例子，例如我们传入</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">queue.add(obj);</span><br><span class="line">queue.add(TemplatesImpl.class);</span><br></pre></td></tr></table></figure>
+
+<p>排序后TemplatesImpl.class位于queue的第一位，而<code>transform()</code>过程中会涉及到<code>getClass()</code>操作，TemplatesImpl.class的<code>getClass()</code>返回<code>java.lang.Class</code></p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004353478.png" alt="image-20220422004353478"></p>
+<p>所以抛出异常</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004403423.png" alt="image-20220422004403423"></p>
+<h3 id="CommonsCollections4"><a href="#CommonsCollections4" class="headerlink" title="CommonsCollections4"></a>CommonsCollections4</h3><p>看看FROHOFF师傅的代码</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004422105.png" alt="image-20220422004422105"></p>
+<p>感觉可以说是和CommonsCollections3非常相似，唯一不同是这里是用PriorityQueue+TransformingComparator触发Transformer链</p>
+<p>把之前学的知识搬过来缝缝改改就出来了</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220422004444061.png" alt="image-20220422004444061"></p>
+<p>整个CC4的调用链是:</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220423002243939.png" alt="image-20220423002243939"></p>
+<p>梳理核心步骤：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//            java.util.PriorityQueue.readObject()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.heapify()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.siftDown()</span></span><br><span class="line"><span class="comment">//								java.util.PriorityQueue.siftDownUsingComparator()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.collections4.comparators.TransformingComparator.compare()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections4.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections4.functors.InstantiateTransformer.transform()</span></span><br><span class="line"><span class="comment">//                            com.sun.org.apache.xalan.internal.xsltc.trax.TrAXFilter.&lt;init&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="改造无数组的CommonsCollections4"><a href="#改造无数组的CommonsCollections4" class="headerlink" title="改造无数组的CommonsCollections4"></a>改造无数组的CommonsCollections4</h4><p>yso中原版的CC4是用的<code>ChainedTransformer</code>的形式触发<code>InstantiateTransformer</code>，这里有点冗余，因为前面学习了<code>TransformingComparator.compare</code>触发<code>transform()</code>时可以传参给<code>transform()</code>，所以可以改成没有数组的CC4。结合前面讲的知识不难改出来</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220424113909055.png" alt="image-20220424113909055"></p>
+<p>调用链</p>
+<p><img src="/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/image-20220424114325325.png" alt="image-20220424114325325"></p>
+<p>梳理核心步骤</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//            java.util.PriorityQueue.readObject()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.heapify()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.siftDown()</span></span><br><span class="line"><span class="comment">//								java.util.PriorityQueue.siftDownUsingComparator()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.collections4.comparators.TransformingComparator.compare()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections4.functors.InstantiateTransformer.transform()</span></span><br><span class="line"><span class="comment">//                            com.sun.org.apache.xalan.internal.xsltc.trax.TrAXFilter.&lt;init&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="修复"><a href="#修复" class="headerlink" title="修复"></a>修复</h3><h4 id="PriorityQueue的利用链是否支持在commons-collections-3中使用？"><a href="#PriorityQueue的利用链是否支持在commons-collections-3中使用？" class="headerlink" title="PriorityQueue的利用链是否支持在commons-collections 3中使用？"></a>PriorityQueue的利用链是否支持在commons-collections 3中使用？</h4><blockquote>
+<p>因为这条利用链中的关键类org.apache.commons.collections4.comparators.TransformingComparator ，在commons-collections4.0以前是版本中是没有实现Serializable接口的，无法在序列化中使用。</p>
+</blockquote>
+<h4 id="Apache-Commons-Collections官方是如何修复反序列化漏洞的？"><a href="#Apache-Commons-Collections官方是如何修复反序列化漏洞的？" class="headerlink" title="Apache Commons Collections官方是如何修复反序列化漏洞的？"></a>Apache Commons Collections官方是如何修复反序列化漏洞的？</h4><ul>
+<li><p>Commons-Collections 3.2.2增加了一个方法用于检测反序列化是否安全。即默认情况下，反序列化包含常⻅的危险Transformer类(InstantiateTransformer、InvokerTransformer、PrototypeFactory、CloneTransformer等)，会抛出异常</p>
+</li>
+<li><p>Commons-Collections 4.1常见的Transformer类不再实现 Serializable 接口.</p>
+</li>
+</ul>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/27/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%85%AB)-%E6%97%A0%E6%95%B0%E7%BB%84%E7%9A%84CC%E7%AF%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-28 23:30:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F-%E4%B9%9D-CC4%E7%AF%87"><span class="toc-text">java安全漫谈观后感(九)-CC4篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%B3%E4%BA%8Ecommons-collections4"><span class="toc-text">关于commons-collections4</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#commons-collections4%E8%BF%98%E8%83%BD%E7%94%A8%E4%BB%A5%E5%89%8Dcommons-collections3-2-1%E7%9A%84gadget%E5%90%97%EF%BC%9F"><span class="toc-text">commons-collections4还能用以前commons-collections3.2.1的gadget吗？</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#commons-collections4%E7%9A%84CC1"><span class="toc-text">commons-collections4的CC1</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#commons-collections4%E7%9A%84CC6"><span class="toc-text">commons-collections4的CC6</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#commons-collections4%E7%9A%84CC3"><span class="toc-text">commons-collections4的CC3</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#commons-collections4%E7%9A%84%E6%97%A0%E6%95%B0%E7%BB%84CC"><span class="toc-text">commons-collections4的无数组CC</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CommonsCollections2"><span class="toc-text">CommonsCollections2</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#TransformingComparator-compare"><span class="toc-text">TransformingComparator.compare()</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#PriorityQueue-readObject"><span class="toc-text">PriorityQueue.readObject()</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%95%B0%E7%BB%84%E7%9A%84CommonsCollections2"><span class="toc-text">使用数组的CommonsCollections2</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%8D%E4%BD%BF%E7%94%A8%E6%95%B0%E7%BB%84%E7%9A%84CommonsCollections2"><span class="toc-text">不使用数组的CommonsCollections2</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ysoserial%E7%9A%84CommonsCollections2"><span class="toc-text">ysoserial的CommonsCollections2</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E4%B8%BA%E5%95%A5%E5%8F%8D%E5%B0%84%E6%94%B9queueArray-0"><span class="toc-text">为啥反射改queueArray[0]</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#CommonsCollections4"><span class="toc-text">CommonsCollections4</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%94%B9%E9%80%A0%E6%97%A0%E6%95%B0%E7%BB%84%E7%9A%84CommonsCollections4"><span class="toc-text">改造无数组的CommonsCollections4</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BF%AE%E5%A4%8D"><span class="toc-text">修复</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#PriorityQueue%E7%9A%84%E5%88%A9%E7%94%A8%E9%93%BE%E6%98%AF%E5%90%A6%E6%94%AF%E6%8C%81%E5%9C%A8commons-collections-3%E4%B8%AD%E4%BD%BF%E7%94%A8%EF%BC%9F"><span class="toc-text">PriorityQueue的利用链是否支持在commons-collections 3中使用？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Apache-Commons-Collections%E5%AE%98%E6%96%B9%E6%98%AF%E5%A6%82%E4%BD%95%E4%BF%AE%E5%A4%8D%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E6%BC%8F%E6%B4%9E%E7%9A%84%EF%BC%9F"><span class="toc-text">Apache Commons Collections官方是如何修复反序列化漏洞的？</span></a></li></ol></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F28%2Fjava%25E5%25AE%2589%25E5%2585%25A8%25E6%25BC%25AB%25E8%25B0%2588%25E8%25A7%2582%25E5%2590%258E%25E6%2584%259F(%25E4%25B9%259D)-CC4%25E7%25AF%2587%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/28/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E4%B9%9D)-CC4%E7%AF%87/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
