@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      java安全漫谈观后感(十二)-无CC的CB1篇 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">java安全漫谈观后感(十二)-无CC的CB1篇</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-05-02 23:12:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h2 id="java安全漫谈观后感-十二-无CC的CB1篇"><a href="#java安全漫谈观后感-十二-无CC的CB1篇" class="headerlink" title="java安全漫谈观后感(十二)-无CC的CB1篇"></a>java安全漫谈观后感(十二)-无CC的CB1篇</h2><h3 id="Commons-Beanutils"><a href="#Commons-Beanutils" class="headerlink" title="Commons-Beanutils"></a>Commons-Beanutils</h3><p>commons-beanutils这个依赖就如其名字一样，是一个对JavaBean操作的工具类。提到JavaBean，我们常常在一些漏洞利用用到其getter或setteer方法(即能对JavaBean中属性做读取或设置的方法)，例如fastjson反序列化。ysoserial中有个很好用的CommonsBeanutils1也用到了类似的思路。</p>
+<h3 id="构造yso的CB1"><a href="#构造yso的CB1" class="headerlink" title="构造yso的CB1"></a>构造yso的CB1</h3><blockquote>
+<p>commons-beanutils中提供了一个静态方法 PropertyUtils.getProperty ，让使用者可以直接调用任意JavaBean的getter方法</p>
+</blockquote>
+<p>前面学习利用<code>TemplatesImpl</code>执行字节码时学习了<code>TemplatesImpl#getOutputProperties()</code>和<code>TemplatesImpl#newTransformer()</code>都可以加载字节码并执行，这里的<code>getOutputProperties()</code>就是一个getter方法。</p>
+<p>所以，对于方法<code>PropertyUtils.getProperty( o1, property ) </code>，当o1是一个<code>TemplatesImpl</code>对象，而<code>property</code>的值为<code>outputProperties</code>时，将会自动调用getter，即调用<code>TemplatesImpl#getOutputProperties()</code>方法，触发代码执行。</p>
+<p>所以只要能控制<code>PropertyUtils.getProperty()</code>的参数，就可以触发到命令执行，那么哪些地方会用到<code>PropertyUtils.getProperty()</code>呢？</p>
+<p>类<code>org.apache.commons.beanutils.BeanComparator</code>有个compare方法</p>
+<p><img src="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/image-20220502152243532.png" alt="image-20220502152243532"></p>
+<p>只要其property属性不为null，就可以触发<code>PropertyUtils.getProperty()</code>方法</p>
+<p><img src="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/image-20220502152446022.png" alt="image-20220502152446022"></p>
+<p>且其property属性可以在构造函数指定，我们也可以反射修改，即是我们完全可控的。</p>
+<p>前面学习commons-collections4时，我们了解到<code>java.util.PriorityQueue</code>的<code>readObject</code>方法可以触发<code>Comparator</code>接口的<code>compare()</code>方法，而<code>BeanComparator</code>正是实现了<code>Comparator</code>接口的类，至此整个调用流程可以连起来了。</p>
+<p>把CC2的前半截抄过来，其中的comparator换成<code>BeanComparator</code>对象，先传入两个无害的参数给<code>PriorityQueue</code>，这样实例化<code>PriorityQueue</code>时不会触发本地的代码执行。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="type">BeanComparator</span> <span class="variable">comparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BeanComparator</span>();</span><br><span class="line"><span class="keyword">final</span> PriorityQueue&lt;Object&gt; queue = <span class="keyword">new</span> <span class="title class_">PriorityQueue</span>&lt;Object&gt;(<span class="number">2</span>, comparator);</span><br><span class="line">queue.add(<span class="string">&quot;1&quot;</span>);</span><br><span class="line">queue.add(<span class="string">&quot;1&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>后续再反射修改queue中的元素为<code>TemplatesImpl</code>对象，修改comparator的property为<code>outputProperties</code>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">setFieldValue(comparator, <span class="string">&quot;property&quot;</span>, <span class="string">&quot;outputProperties&quot;</span>);</span><br><span class="line">setFieldValue(queue, <span class="string">&quot;queue&quot;</span>, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;obj, obj&#125;);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/image-20220502153420085.png" alt="image-20220502153420085"></p>
+<p>yso中和p神的思路有一些许不同是在初始化<code>BeanComparator</code>时，p神是置空，而yso中设置了property为<code>lowestSetBit</code>。</p>
+<p>两者没有太大差别，调用链都是一样的</p>
+<p><img src="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/image-20220502153732440.png" alt="image-20220502153732440"></p>
+<p>核心部分是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//  Gadet Chain:</span></span><br><span class="line"><span class="comment">//            java.util.PriorityQueue.readObject()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.heapify()</span></span><br><span class="line"><span class="comment">//                java.util.PriorityQueue.siftDown()</span></span><br><span class="line"><span class="comment">//								java.util.PriorityQueue.siftDownUsingComparator()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.beanutils.BeanComparator.compare()</span></span><br><span class="line"><span class="comment">//                    org.apache.commons.beanutils.PropertyUtils.getProperty()</span></span><br><span class="line"><span class="comment">//                        com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl.getOutputProperties()</span></span><br><span class="line"><span class="comment">//                        com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl.newTransformer()</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="去除CC依赖"><a href="#去除CC依赖" class="headerlink" title="去除CC依赖"></a>去除CC依赖</h3><p>yso中的CB1默认依赖commons.collections，p神发现CB1对CC的依赖只存在于初始化BeanComparator这一步，并不影响整个反序列化gadget chain。</p>
+<p><img src="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/image-20220502154310292.png" alt="image-20220502154310292"></p>
+<p>而<code>BeanComparator</code>的构造函数也支持指定<code>comparator</code>，只要指定了<code>comparator</code>就不会用到CC的这个<code>ComparableComparator</code></p>
+<p><img src="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/image-20220502154434695.png" alt="image-20220502154434695"></p>
+<p>则我们可以自己找新的实现Comparator接口的类了，只要满足以下条件即可</p>
+<ul>
+<li>实现 java.util.Comparator 接口</li>
+<li>实现 java.io.Serializable 接口 </li>
+<li>尽可能在java或目标环境自带的依赖中</li>
+</ul>
+<p>然后p神找到了<code>CaseInsensitiveComparator</code>这个类，jdk自带，于是可以构造无CC的CB1</p>
+<p><img src="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/image-20220502155114209.png" alt="image-20220502155114209"></p>
+<p>除了p神找的这个类，<a target="_blank" rel="noopener" href="https://github.com/SummerSec/BlogPapers/blob/master/2022/CodeQL%E5%88%9D%E8%A7%81Shiro550.md">Summer师傅</a>用codeql也找了一些类似的替代类，都已经武装到他的工具<a target="_blank" rel="noopener" href="https://github.com/SummerSec/ShiroAttack2/tree/master/src/main/java/com/summersec/attack/deser/payloads">ShiroAttack2</a>中</p>
+<p>我也用Summer师傅给的codeql代码去看了看</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">import java</span><br><span class="line"></span><br><span class="line">class MySerializableImpl extends ClassOrInterface&#123;</span><br><span class="line">    MySerializableImpl()&#123;</span><br><span class="line">        this.getName()<span class="operator">=</span>&quot;Comparator&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">predicate isMyClass(Class m) &#123;</span><br><span class="line">    m.getASourceSupertype() instanceof MySerializableImpl</span><br><span class="line">    <span class="keyword">and</span> m.getASourceSupertype() instanceof TypeSerializable</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> Class c <span class="keyword">where</span> isMyClass(c) <span class="keyword">select</span> c</span><br></pre></td></tr></table></figure>
+
+<p>lgtm的openjdk&#x2F;jdk8u似乎在维护，暂时查不了，将就在<a target="_blank" rel="noopener" href="https://lgtm.com/query/3539707721110557993/">高版本的jdk中查了下</a>似乎没有Summer师傅找的那么多，但是也能找到p神发现的<code>CaseInsensitiveComparator</code></p>
+<p><img src="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/image-20220502155512737.png" alt="image-20220502155512737"></p>
+<h3 id="marshalsec中的CB"><a href="#marshalsec中的CB" class="headerlink" title="marshalsec中的CB"></a>marshalsec中的CB</h3><p>不难察觉出CB1的核心是可以触发任意的getter方法，则例如fastjson反序列化中用到getter构造的gadget自然也可以给CB1用，例如老熟人<code>JdbcRowSetImpl</code>，另一个java反序列化知名工具<a target="_blank" rel="noopener" href="https://github.com/mbechler/marshalsec">marshalsec</a>中的CB就是这样实现的。</p>
+<p><img src="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/image-20220502161125223.png" alt="image-20220502161125223"></p>
+<h3 id="关于suid"><a href="#关于suid" class="headerlink" title="关于suid"></a>关于suid</h3><p>suid不同会导致反序列化失败，打之前建议先探测下版本，参考<a target="_blank" rel="noopener" href="https://gv7.me/articles/2021/construct-java-detection-class-deserialization-gadget/">c0ny1大师傅</a>收集的信息</p>
+<table>
+<thead>
+<tr>
+<th>版本范围</th>
+<th>漏洞版本</th>
+<th align="left">判断类</th>
+<th>suid冲突</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>&gt;&#x3D; 1.9.0</td>
+<td>是</td>
+<td align="left">存在org.apache.commons.beanutils.BeanIntrospector</td>
+<td>org.apache.commons.beanutils.BeanComparator -2044202215314119608</td>
+</tr>
+<tr>
+<td>1.7.0 &lt;&#x3D; &lt;&#x3D; 1.8.3</td>
+<td>是</td>
+<td align="left">存在org.apache.commons.collections.Buffer</td>
+<td>org.apache.commons.beanutils.BeanComparator -3490850999041592962</td>
+</tr>
+<tr>
+<td>&gt;&#x3D; 1.6 or &#x3D; 20030211.134440</td>
+<td>是</td>
+<td align="left">存在org.apache.commons.beanutils.ConstructorUtils</td>
+<td>org.apache.commons.beanutils.BeanComparator 2573799559215537819</td>
+</tr>
+<tr>
+<td>&gt;&#x3D; 1.5 or 20021128.082114 &gt; 1.4.1</td>
+<td>是</td>
+<td align="left">存在org.apache.commons.beanutils.BeanComparator</td>
+<td>org.apache.commons.beanutils.BeanComparator 5123381023979609048</td>
+</tr>
+</tbody></table>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/05/01/%E4%B8%80%E6%AC%A1amf%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E7%BB%95waf/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-05-02 23:12:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F-%E5%8D%81%E4%BA%8C-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87"><span class="toc-text">java安全漫谈观后感(十二)-无CC的CB1篇</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Commons-Beanutils"><span class="toc-text">Commons-Beanutils</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%84%E9%80%A0yso%E7%9A%84CB1"><span class="toc-text">构造yso的CB1</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8E%BB%E9%99%A4CC%E4%BE%9D%E8%B5%96"><span class="toc-text">去除CC依赖</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#marshalsec%E4%B8%AD%E7%9A%84CB"><span class="toc-text">marshalsec中的CB</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B3%E4%BA%8Esuid"><span class="toc-text">关于suid</span></a></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F05%2F02%2Fjava%25E5%25AE%2589%25E5%2585%25A8%25E6%25BC%25AB%25E8%25B0%2588%25E8%25A7%2582%25E5%2590%258E%25E6%2584%259F(%25E5%258D%2581%25E4%25BA%258C)-%25E6%2597%25A0CC%25E7%259A%2584CB1%25E7%25AF%2587%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
