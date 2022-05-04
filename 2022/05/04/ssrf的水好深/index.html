@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      ssrf的水好深 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">ssrf的水好深</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-05-04 22:10:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h1 id="ssrf的水好深"><a href="#ssrf的水好深" class="headerlink" title="ssrf的水好深"></a>ssrf的水好深</h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>以前写的一篇笔记，缝合了很多网上找到的资料。主要记录了ssrf中的明星协议gopher协议，ssrf触发点，ssrf攻击面以及绕过的相关信息。</p>
+<h2 id="gopher协议"><a href="#gopher协议" class="headerlink" title="gopher协议"></a>gopher协议</h2><p>我个人理解gopher协议就是http协议的低配版，它是个tcp&#x2F;ip协议。gopher协议的格式大概像下面这种<br><code>gopher://localhost/_xxx</code><br>这在http协议中似乎就是个纯纯的get请求，但是它其实很强大。我们可以使用它构造出几乎任意的TCP数据流，所以我们常常能看到各位大师傅用gopher协议秀操作的文章。</p>
+<h3 id="格式详解"><a href="#格式详解" class="headerlink" title="格式详解"></a>格式详解</h3><p>大概可以参考这篇文章(<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/6993">gopher 协议在SSRF 中的一些利用</a>)吧，个人觉得只需要记住<br><code>gopher://&lt;host&gt;:&lt;port&gt;/&lt;gopher-path&gt;</code>里<code>&lt;port&gt;/</code>后的第一个字符会被识别成gophertype的值，会吞掉我们payload中的第一个字符，所以我们常常看到各种payload的<code>&lt;gopher-path&gt;</code>位置第一个字符是<code>_</code>字符，这个<code>_</code>字符就是用来防吞的，这里其实填任意可见字符似乎都不会影响后面真正的payload。</p>
+<h3 id="数据包构造"><a href="#数据包构造" class="headerlink" title="数据包构造"></a>数据包构造</h3><p>做过ssrf+redis实验的同学应该都能或多或少感觉到，把一个我们想要的请求转成gopher协议数据包其实并不是很难。大概遵守下列规则：</p>
+<ul>
+<li>如果第一个字符是&gt;或者&lt; 那么丢弃该行字符串，表示请求和返回的时间。</li>
+<li>如果前3个字符是+OK 那么丢弃该行字符串，表示返回的字符串。</li>
+<li>将\r\n换行符替换成%0d%0a。</li>
+<li>空白行替换为%0a。</li>
+<li>特殊字符和空格字符都需要url编码。</li>
+<li>在HTTP包的最后要加%0d%0a，代表消息结束。</li>
+</ul>
+<p>由于gopher可以构造的是tcp数据流,，遇到数据包简单的服务例如redis这种可能肉眼抓几个包都能看懂然后开始模拟构造数据包，不过遇到复杂点的服务，比如mysql，只能老实带上痛苦面具了。</p>
+<p>个人推荐先知这篇文章(<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/5844">无脑生成gopher协议利用payload</a>)的做法，直接用这位师傅的工具具体情境构造具体的包。</p>
+<h3 id="局限"><a href="#局限" class="headerlink" title="局限"></a>局限</h3><p>参考<a target="_blank" rel="noopener" href="https://www.cnblogs.com/wjrblogs/p/13199986.html">这个师傅的文章</a></p>
+<p><img src="/2022/05/04/ssrf%E7%9A%84%E6%B0%B4%E5%A5%BD%E6%B7%B1/image-20220502231512559.png" alt="image-20220502231512559"></p>
+<h3 id="利用工具"><a href="#利用工具" class="headerlink" title="利用工具"></a>利用工具</h3><h4 id="Tomcat"><a href="#Tomcat" class="headerlink" title="Tomcat"></a>Tomcat</h4><p><a target="_blank" rel="noopener" href="https://github.com/pimps/gopher-tomcat-deployer">https://github.com/pimps/gopher-tomcat-deployer</a></p>
+<p>可以攻击tomcat弱口令</p>
+<h4 id="MySQL-PostgreSQL-FastCGI-Memcached-Redis-Zabbix-SMTP"><a href="#MySQL-PostgreSQL-FastCGI-Memcached-Redis-Zabbix-SMTP" class="headerlink" title="MySQL,PostgreSQL,FastCGI,Memcached,Redis,Zabbix,SMTP"></a>MySQL,PostgreSQL,FastCGI,Memcached,Redis,Zabbix,SMTP</h4><p><a target="_blank" rel="noopener" href="https://github.com/tarunkant/Gopherus">https://github.com/tarunkant/Gopherus</a></p>
+<h4 id="redis-auth"><a href="#redis-auth" class="headerlink" title="redis auth"></a>redis auth</h4><p><a target="_blank" rel="noopener" href="https://github.com/LS95/gopher-redis-auth">https://github.com/LS95/gopher-redis-auth</a></p>
+<p>遇到有认证的redis可以用</p>
+<h4 id="mysql"><a href="#mysql" class="headerlink" title="mysql"></a>mysql</h4><p><a target="_blank" rel="noopener" href="https://github.com/FoolMitAh/mysql_gopher_attack">https://github.com/FoolMitAh/mysql_gopher_attack</a></p>
+<h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/6993">https://xz.aliyun.com/t/6993</a><br><a target="_blank" rel="noopener" href="https://blog.chaitin.cn/gopher-attack-surfaces/">https://blog.chaitin.cn/gopher-attack-surfaces/</a></p>
+<h2 id="ssrf触发点"><a href="#ssrf触发点" class="headerlink" title="ssrf触发点"></a>ssrf触发点</h2><h3 id="php"><a href="#php" class="headerlink" title="php"></a>php</h3><h4 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h4><ul>
+<li><p>file_get_contents()</p>
+</li>
+<li><p>fsockopen()</p>
+</li>
+<li><p>curl_exec()</p>
+</li>
+<li><p>fopen</p>
+</li>
+</ul>
+<h4 id="一些小知识"><a href="#一些小知识" class="headerlink" title="一些小知识"></a>一些小知识</h4><ul>
+<li>一般情况下PHP不会开启<code>fopen</code>的<code>gopher wrapper</code>。</li>
+<li><code>file_get_contents</code>的gopher协议不能urlEncode</li>
+<li><code>file_get_contents</code>关于Gopher的302跳转有bug，导致利用失败</li>
+<li><code>curl/libcurl</code>7.43上gopher协议存在bug（截断），7.45以上无此bug</li>
+<li><code>curl_exec()</code>默认不跟踪跳转</li>
+<li><code>file_get_contents()</code>支持php:&#x2F;&#x2F;input协议</li>
+<li><code>libcurl</code>下的file:&#x2F;&#x2F;协议可以用<code>file:///flag.php?.jpg</code>或<code>file:///flag.php#.jpg</code>这种格式绕过黑名单访问到flag.php文件，但是<code>file_get_contents</code>下不行。可参考<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/7112">浅析SSRF与文件读取的一些小特性</a>，文章中同时提到了分析过程中发现php底层代码中的写法导致了file:&#x2F;&#x2F;&#x2F;只能用绝对路径。</li>
+<li><code>file_get_contents</code>可以用<code>a://www.baidu.com/../../../../../../etc/passwd</code>读文件</li>
+</ul>
+<h3 id="python"><a href="#python" class="headerlink" title="python"></a>python</h3><p>一般发生在urllib(urllib2)和requests库，其中urllib并不支持gopher,dict协议，但是urllib有几个cve可以触发crlf漏洞，此时的普通<strong>http协议配合crlf漏洞产生化学反应</strong>，可以用于攻击redis等需要换行的服务。可参考<a target="_blank" rel="noopener" href="https://security.tencent.com/index.php/blog/msg/179">案例</a></p>
+<h4 id="一些小知识-1"><a href="#一些小知识-1" class="headerlink" title="一些小知识"></a>一些小知识</h4><ul>
+<li>urllib有几个cve可以触发crlf漏洞，此时的普通<strong>http协议配合crlf漏洞产生化学反应</strong></li>
+<li>urlib还有个CVE-2019-9948，影响Python 2.x到2.7.16，这个版本间的urllib支持<strong>local_file&#x2F;local-file协议</strong>，可以读取任意文件。</li>
+<li>requests库发起的请求默认跟随30X状态码跳转</li>
+<li>urllib库30x跳转后似乎有协议限制,可以http,https,ftp,不能file</li>
+<li>urllib2还有<code>local-file://</code>和<code>local_file://</code>协议可用于读取文件</li>
+<li>urllib.urlopen还可以直接<code>urlopen(&quot;///etc/passwd&quot;).read()</code>读文件，或许可以作为一种绕过黑名单限制的思路</li>
+</ul>
+<h3 id="java"><a href="#java" class="headerlink" title="java"></a>java</h3><p>一般有<code>HttpURLConnection</code>，<code>URLConnection</code>，<code>HttpClients</code>，<code>URL</code>等类可触发。现在正常点的java版本(大概是1.7.x以上就不能用gopher了)一般是无法使用gopher,dict等协议的，一般只有http,ftp,file等协议，相对来说有点拉胯。</p>
+<blockquote>
+<p>如果发起网络请求的类是带HTTP开头，那只支持HTTP、HTTPS协议.<br>比如<br>HttpURLConnection<br>  HttpClient<br>  反之则支持sun.net.<a target="_blank" rel="noopener" href="http://www.protocol所有协议/">www.protocol所有协议</a><br>  其中sun.net.<a target="_blank" rel="noopener" href="http://www.protocol支持file/">www.protocol支持file</a> ftp mailto http https jar netdoc</p>
+</blockquote>
+<h4 id="一些小知识-2"><a href="#一些小知识-2" class="headerlink" title="一些小知识"></a>一些小知识</h4><ul>
+<li>weblogic的ssrf由于weblogic本身代码逻辑问题导致我们可以构造CRLF漏洞，因此虽然java一般只有http协议等协议，但是可以通<strong>过crlf漏洞换行去打redis等服务</strong>.</li>
+<li>一般有HttpURLConnection类的ssrf漏洞在windows情境下可以用来拿到net-ntlm hash，进一步打<strong>ntlm relay</strong>等操作</li>
+<li><strong>java默认支持重定向</strong>。协议不支持是语言底层实现级的，302跳转这类手段显然是无法跳出语言本身限制的,所以并不能像php一样有用302跳转一下就能用gopher这种操作</li>
+<li>jsp中&lt;c:import&gt;标签既是ssrf，也是个文件包含漏洞</li>
+<li>java的默认ttl是10s，所以默认用不了dns rebinding。</li>
+</ul>
+<h4 id="参考-1"><a href="#参考-1" class="headerlink" title="参考"></a>参考</h4><p><a target="_blank" rel="noopener" href="https://docs.ioin.in/writeup/joychou.org/_index_php_web_javassrf_html/index.html">ssrf in java</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/2761">JAVA代码审计之XXE与SSRF</a></p>
+<h2 id="攻击面"><a href="#攻击面" class="headerlink" title="攻击面"></a>攻击面</h2><p>ssrf漏洞本质上是可以构造任意的tcp数据流，所以可操作性特别大，这里记录我个人觉得经典的或比较有趣的操作。</p>
+<h3 id="文件读取"><a href="#文件读取" class="headerlink" title="文件读取"></a>文件读取</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">file:///etc/passwd</span><br><span class="line">file:///C:/Windows/win.ini</span><br><span class="line"></span><br><span class="line">遇到检测host时:</span><br><span class="line">file://localhost/etc/passwd</span><br><span class="line"></span><br><span class="line">python urllib2:</span><br><span class="line">local_file:///etc/passwd</span><br><span class="line">local-file:///etc/passwd</span><br></pre></td></tr></table></figure>
+
+<h4 id="参考-2"><a href="#参考-2" class="headerlink" title="参考"></a>参考</h4><p><a target="_blank" rel="noopener" href="https://datatracker.ietf.org/doc/html/rfc8089">rfc8089</a><br><a target="_blank" rel="noopener" href="https://govuln.com/topic/51/">P神知识星球帖子</a></p>
+<h3 id="ftp"><a href="#ftp" class="headerlink" title="ftp"></a>ftp</h3><p>值得一提的是打ftp服务其实不一定要用ftp协议，其实可以用gopher协议。甚至可以完成上传下载的操作，可以看看这个案例<br><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/6993">https://xz.aliyun.com/t/6993</a></p>
+<h3 id="memcache"><a href="#memcache" class="headerlink" title="memcache"></a>memcache</h3><p>https:&#x2F;&#x2F;_thorns.gitbooks.io&#x2F;sec&#x2F;content&#x2F;bilibilimou_fen_zhan_cong_xin_xi_xie_lu_dao_ssrf_z.html</p>
+<h3 id="redis"><a href="#redis" class="headerlink" title="redis"></a>redis</h3><p>老熟人了属于是，除了常规私钥写crontab等手段以外还可以用主从复制写文件，主从复制加载so直接执行系统命令好像会有些限制条件。</p>
+<h4 id="小知识"><a href="#小知识" class="headerlink" title="小知识"></a>小知识</h4><ul>
+<li><p>dict协议和gopher协议经抓包测试唯一的不同在于dict协议会自动跟上一句quit命令，所以其实就算dict协议不能用我们也是可以用gopher协议操作拿到回显的</p>
+</li>
+<li><p>写crontab只能在centos成功，原因参考<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/5665#toc-8">浅析Redis中SSRF的利用</a></p>
+</li>
+</ul>
+<h4 id="经典案例"><a href="#经典案例" class="headerlink" title="经典案例"></a>经典案例</h4><table>
+<thead>
+<tr>
+<th>内容</th>
+<th>链接</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>redis到python反序列化</td>
+<td><a target="_blank" rel="noopener" href="https://www.leavesongs.com/PENETRATION/getshell-via-ssrf-and-redis.html">https://www.leavesongs.com/PENETRATION/getshell-via-ssrf-and-redis.html</a></td>
+</tr>
+<tr>
+<td>一个标准ssrf+redis案例</td>
+<td><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/9589">https://xz.aliyun.com/t/9589</a></td>
+</tr>
+<tr>
+<td>一次“SSRF–&gt;RCE”的艰难利用</td>
+<td><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/kfYF157ux_VAOymU5l5RFA">https://mp.weixin.qq.com/s/kfYF157ux_VAOymU5l5RFA</a></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h3 id="mysql-1"><a href="#mysql-1" class="headerlink" title="mysql"></a>mysql</h3><p>只能打空密码的mysql服务，因为只有空密码的情景可以非交互的执行sql命令，带密码的mysql不能在非交互情景执行sql操作。<br><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/9554#toc-16">https://xz.aliyun.com/t/9554#toc-16</a><br><a target="_blank" rel="noopener" href="https://www.freebuf.com/articles/web/159342.html">https://www.freebuf.com/articles/web/159342.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/9vk-H36erencugdYca9qXA">https://mp.weixin.qq.com/s/9vk-H36erencugdYca9qXA</a></p>
+<h3 id="docker"><a href="#docker" class="headerlink" title="docker"></a>docker</h3><p>利用docker remote api，也是docker逃逸的一种常见思路吧，黑盒盲猜4243,2375,2376端口，这几个端口是docker远程api接口可能的端口，可以通过操作接口拿到docker宿主机权限。<br><a target="_blank" rel="noopener" href="https://www.freebuf.com/articles/web/179910.html">https://www.freebuf.com/articles/web/179910.html</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/86440">https://www.anquanke.com/post/id/86440</a></p>
+<h3 id="phar"><a href="#phar" class="headerlink" title="phar"></a>phar</h3><p><a target="_blank" rel="noopener" href="https://srcincite.io/blog/2018/10/02/old-school-pwning-with-new-school-tricks-vanilla-forums-remote-code-execution.html">https://srcincite.io/blog/2018/10/02/old-school-pwning-with-new-school-tricks-vanilla-forums-remote-code-execution.html</a></p>
+<h3 id="fastcgi"><a href="#fastcgi" class="headerlink" title="fastcgi"></a>fastcgi</h3><p>需要知道服务器上任意一个php文件的绝对路径<br><a target="_blank" rel="noopener" href="https://joner11234.github.io/article/9897b513.html">https://joner11234.github.io/article/9897b513.html</a></p>
+<h3 id="tomcat"><a href="#tomcat" class="headerlink" title="tomcat"></a>tomcat</h3><p>相关操作源自于一篇ctf的wp</p>
+<p><a target="_blank" rel="noopener" href="https://bookgin.tw/2018/12/03/from-xxe-to-rce-pwn2win-ctf-2018-writeup/">https://bookgin.tw/2018/12/03/from-xxe-to-rce-pwn2win-ctf-2018-writeup/</a></p>
+<p>先用文件读取读tomcat-user.xml的密码，然后可以通过crlf漏洞构造basic认证的payload访问到tomcat服务的&#x2F;manager&#x2F;list页面。很自然地想到我们可不可以利用gopher协议部署war包，java的gopher协议不支持所有不可见字符，比如%7f以上的字符可能就会导致问题，所以并不能自己随便做个War包抓包构造Poc。得用下面这个脚本打，这个脚本对其中创建zip包的ascii字符做过处理，只会出现(0x00—0x7f)的值。</p>
+<p><a target="_blank" rel="noopener" href="https://github.com/pimps/gopher-tomcat-deployer">https://github.com/pimps/gopher-tomcat-deployer</a></p>
+<p>wp作者还提到了另外一种思路，可以利用java的<code>jar://</code>协议远程下载我们恶意的jar包，<code>jar://</code>协议会在指定的tmp目录存放下载的jar包。同时tomcat是支持通过本地jar包部署的</p>
+<blockquote>
+<p>deploy?war&#x3D;file:&#x2F;opt&#x2F;tomcat&#x2F;temp&#x2F;…</p>
+</blockquote>
+<p>而且题目环境中的xxe可以用<code>file:///</code>列举目录，听起来是可行的，不过并没有实际验证是否可行.</p>
+<h3 id="dubbo"><a href="#dubbo" class="headerlink" title="dubbo"></a>dubbo</h3><p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/9627">https://xz.aliyun.com/t/9627</a></p>
+<h3 id="S2"><a href="#S2" class="headerlink" title="S2"></a>S2</h3><p>想了想除了S2-046会用到%00可能会在构造poc时遇到问题，其他常见的S2-016，S2-045等等应该都可以打</p>
+<p><a target="_blank" rel="noopener" href="https://www.seebug.org/vuldb/ssvid-97311">https://www.seebug.org/vuldb/ssvid-97311</a></p>
+<h3 id="jboss"><a href="#jboss" class="headerlink" title="jboss"></a>jboss</h3><p><a target="_blank" rel="noopener" href="https://paper.seebug.org/papers/Archive/drops2/Bool%E5%9E%8BSSRF%E7%9A%84%E6%80%9D%E8%80%83%E4%B8%8E%E5%AE%9E%E8%B7%B5.html">https://paper.seebug.org/papers/Archive/drops2/Bool%E5%9E%8BSSRF%E7%9A%84%E6%80%9D%E8%80%83%E4%B8%8E%E5%AE%9E%E8%B7%B5.html</a></p>
+<h3 id="Weblogic"><a href="#Weblogic" class="headerlink" title="Weblogic"></a>Weblogic</h3><p>例如那几个console的cve洞应该可以打</p>
+<h3 id="axis"><a href="#axis" class="headerlink" title="axis"></a>axis</h3><p>axis可以有get型poc，所以可以打ssrf</p>
+<p><a target="_blank" rel="noopener" href="https://forum.butian.net/share/136">https://forum.butian.net/share/136</a></p>
+<h3 id="proxylogon"><a href="#proxylogon" class="headerlink" title="proxylogon"></a>proxylogon</h3><p>这个ssrf带着exchange服务器的Kerberos凭据，而且唯一的权限验证函数可以通过我们可控的cookie设置高版本值绕过，所以可以用这个ssrf访问到exchange的各种后端服务，通过利用这个ssrf可以拿到很多敏感信息，再配合一个后台文件写入漏洞CVE-2021–27065就构成了rce<br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/-zhong/p/14533053.html">https://www.cnblogs.com/-zhong/p/14533053.html</a><br><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/vz3CVwvUVMG92XFl4c4q3Q">https://mp.weixin.qq.com/s/vz3CVwvUVMG92XFl4c4q3Q</a><br><a target="_blank" rel="noopener" href="https://www.4hou.com/posts/q66D">https://www.4hou.com/posts/q66D</a></p>
+<h3 id="proxyshell"><a href="#proxyshell" class="headerlink" title="proxyshell"></a>proxyshell</h3><p>一处过滤不严谨的ssrf导致可以访问到exchange的后端powershell接口<br><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/-qJh2u0mbrKWxWNCZgOrVw">https://mp.weixin.qq.com/s/-qJh2u0mbrKWxWNCZgOrVw</a><br><a target="_blank" rel="noopener" href="https://i.blackhat.com/USA21/Wednesday-Handouts/us-21-ProxyLogon-Is-Just-The-Tip-Of-The-Iceberg-A-New-Attack-Surface-On-Microsoft-Exchange-Server.pdf">https://i.blackhat.com/USA21/Wednesday-Handouts/us-21-ProxyLogon-Is-Just-The-Tip-Of-The-Iceberg-A-New-Attack-Surface-On-Microsoft-Exchange-Server.pdf</a></p>
+<h3 id="ntlm-relay"><a href="#ntlm-relay" class="headerlink" title="ntlm relay"></a>ntlm relay</h3><blockquote>
+<p>Java在使用内置类 sun.net.<a target="_blank" rel="noopener" href="http://www.protocol.http.httpurlconnection/">www.protocol.http.HttpURLConnection</a> 发送HTTP请求遇到状态码为401的HTTP返回头时，会判断该页面要求使用哪种认证方式，若采用的NTLM认证则会自动使用当前用户凭据进行认证。<br>其根本原因在于Windows下的Java默认启用了透明NTLM认证，并且将所有由外部传入的URL地址都认为是可信的。</p>
+</blockquote>
+<p>理论上就是用URLConnection的bug可以让我们拿到Net-NTLM Hash，然后就可以做一些relay操作<br><a target="_blank" rel="noopener" href="http://redteam.today/2019/12/19/Using%20Java%E2%80%99s%20SSRF%20vulnerability%20rce%20via%20ntlm%20relay/">http://redteam.today/2019/12/19/Using%20Java’s%20SSRF%20vulnerability%20rce%20via%20ntlm%20relay/</a><br><a target="_blank" rel="noopener" href="https://xlab.tencent.com/cn/2019/03/18/ghidra-from-xxe-to-rce/">https://xlab.tencent.com/cn/2019/03/18/ghidra-from-xxe-to-rce/</a></p>
+<h3 id="文件包含实现越权"><a href="#文件包含实现越权" class="headerlink" title="文件包含实现越权"></a>文件包含实现越权</h3><p>某凌oa之前爆出来的一个任意文件读取漏洞，漏洞触发点在&#x2F;sys&#x2F;ui&#x2F;extend&#x2F;varkind&#x2F;custom.jsp</p>
+<p>很多分析文章说这个jsp中用到了&lt;c:import&gt;标签，所以产生了这里的ssrf漏洞。这个漏洞有一种利用方式是ssrf+xmldecoder，具体过程网上都有(<a target="_blank" rel="noopener" href="https://note.youdao.com/ynoteshare1/index.html?id=96fd916bc2bb2125286d4d3722667627&type=note">例如这个</a>)，这里不做过多分析。</p>
+<p>整个流程中其实有一个细节问题，xmldecoder的触发点原本是需要登陆后才能操作的，可是这里的一个前台ssrf怎么就毫无违和感的触发了后台的一个功能点？</p>
+<p>其实关键在&lt;c:import&gt;标签，网上不少相关复现文章都是搞了一个file协议去读数据库配置文件，很容易忘人产生这是个ssrf漏洞的错觉。</p>
+<p>查了查该标签的相关信息，看到一篇文章这样描述<br><img src="/2022/05/04/ssrf%E7%9A%84%E6%B0%B4%E5%A5%BD%E6%B7%B1/image-20220502232947500.png" alt="image-20220502232947500"><br>即这个网上传言的ssrf漏洞严格来讲其实是文件包含漏洞，去<a target="_blank" rel="noopener" href="https://tomcat.apache.org/taglibs/standard/">官网</a>拉一个份jstl源码回来分析<br>简单分析下最后会走到标出来那里<br><img src="/2022/05/04/ssrf%E7%9A%84%E6%B0%B4%E5%A5%BD%E6%B7%B1/image-20220502233326166.png" alt="image-20220502233326166"><br>赫然一个<code>RequestDispatcher.include</code>，所以这里确实是个包含漏洞。</p>
+<p>这个某凌案例给了我们一个思路：实战黑盒情况下，我们遇到ssrf的漏洞点不要局限思维，说不定就和这个案例一样本质是个文件包含，可以看看本地的功能点是否可以通过ssrf实现类似越权的效果。</p>
+<h3 id="结合白盒审计getshell"><a href="#结合白盒审计getshell" class="headerlink" title="结合白盒审计getshell"></a>结合白盒审计getshell</h3><p>一些拿到代码的情景可能可以使用ssrf配合其他漏洞达到rce的效果。</p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/9923">https://xz.aliyun.com/t/9923</a></p>
+<h3 id="拿真实ip"><a href="#拿真实ip" class="headerlink" title="拿真实ip"></a>拿真实ip</h3><p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/9371">https://xz.aliyun.com/t/9371</a></p>
+<h3 id="socks4代理"><a href="#socks4代理" class="headerlink" title="socks4代理"></a>socks4代理</h3><p><a target="_blank" rel="noopener" href="https://github.com/iamultra/ssrfsocks">https://github.com/iamultra/ssrfsocks</a><br><a target="_blank" rel="noopener" href="https://github.com/bcoles/ssrf_proxy">https://github.com/bcoles/ssrf_proxy</a><br><a target="_blank" rel="noopener" href="https://github.com/swisskyrepo/SSRFmap">https://github.com/swisskyrepo/SSRFmap</a></p>
+<h3 id="云渗透情景"><a href="#云渗透情景" class="headerlink" title="云渗透情景"></a>云渗透情景</h3><p>大概就是通过类似ssrf的方法可以拿到aws的Metadata API。然后Metadata API就有ACCESS_KEY，ssh私钥这些东西,有机会用这些key控制服务器</p>
+<p><a target="_blank" rel="noopener" href="https://hackerone.com/reports/401136">https://hackerone.com/reports/401136</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/4964">https://xz.aliyun.com/t/4964</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/4398">https://xz.aliyun.com/t/4398</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/4381">https://xz.aliyun.com/t/4381</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/4088">https://xz.aliyun.com/t/4088</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/2871">https://xz.aliyun.com/t/2871</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/swisskyrepo/SSRFmap">https://github.com/swisskyrepo/SSRFmap</a>)</p>
+<h3 id="ssrf-chains"><a href="#ssrf-chains" class="headerlink" title="ssrf chains"></a>ssrf chains</h3><p>针对各种服务的一些ssrf chains项目</p>
+<p><a target="_blank" rel="noopener" href="https://blog.assetnote.io/2021/01/13/blind-ssrf-chains/">https://blog.assetnote.io/2021/01/13/blind-ssrf-chains/</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/assetnote/blind-ssrf-chains">https://github.com/assetnote/blind-ssrf-chains</a></p>
+<h2 id="绕过"><a href="#绕过" class="headerlink" title="绕过"></a>绕过</h2><h3 id="30x跳转"><a href="#30x跳转" class="headerlink" title="30x跳转"></a>30x跳转</h3><p>30x跳转也是SSRF漏洞利用中的一个经典绕过方式，当防御方限制只允许http(s)访问或者对请求的host做了正确的校验后，可以通过30x方式跳转进行绕过。</p>
+<p>针对只允许http(s)协议的情况，我们可以通过<br><code>Location: dict://127.0.0.1:6379</code>跳转到dict协议，从而扩大我们攻击面，来进行更深入的利用。</p>
+<p>针对没有禁止url跳转，但是对请求host做了正确判断的情况，我们则可以通过<code>Location: http://127.0.0.1:6379</code>的方式来绕过限制</p>
+<h3 id="URL解析差异绕过"><a href="#URL解析差异绕过" class="headerlink" title="URL解析差异绕过"></a>URL解析差异绕过</h3><p>不同开发语言对http协议的url解析存在差异，甚至同一开发语言的不同函数比同一个url都会有不同的解析，因此防御人员的waf代码很容易在这块出问题。</p>
+<p>例如:<br><code>http://u:p@a.com:80@b.com/</code><br>这段url会被php的parse_url函数识别成b.com，但是libcurl会识别成a.com，这是一个ctf中常见的考点。</p>
+<h4 id="参考-3"><a href="#参考-3" class="headerlink" title="参考"></a>参考</h4><p><a target="_blank" rel="noopener" href="https://security.tencent.com/index.php/blog/msg/179">https://security.tencent.com/index.php/blog/msg/179</a><br><a target="_blank" rel="noopener" href="https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf">orange blackhat2017 ppt</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/3493">https://xz.aliyun.com/t/3493</a></p>
+<h3 id="dns-rebinding"><a href="#dns-rebinding" class="headerlink" title="dns rebinding"></a>dns rebinding</h3><p>在常见的ssrf防御方案中，检查我们的恶意url时如果我们用的域名此时会触发一次dns查询，当我们通过检测发起正式的请求时，也会有一次dns查询，因此整个ssrf在有防御的情况下通常会触发2次dns查询，这就给了我们一些操作空间。核心就是利用dns机制中的ttl，即缓存保存时间。当我们设置ttl为0时，第一次dns查询我们恶意域名查到的是我们能通过防御检查的正常ip，而第二次查询，由于ttl为0所以没有缓存，再次触发查询，此时我们只需把恶意域名的解析ip换成我们理想的ip就可以达到绕过waf触发我们理想的ssrf漏洞访问我们理想的ip。</p>
+<p>很好很妙的思路，理论上能直接绕过绝大多数常规的基于黑白名单检测的机制。但实战中感觉略显鸡肋，正经点的防御厂商感觉并不会随意让服务器可以随意出网请求解析域名，不过在ctf比赛里应该能经常能看到。</p>
+<p>值得一提的是java中默认ttl是10s，所以默认是不能用dns rebinding的。</p>
+<h4 id="参考-4"><a href="#参考-4" class="headerlink" title="参考"></a>参考</h4><p><a target="_blank" rel="noopener" href="https://security.tencent.com/index.php/blog/msg/179">https://security.tencent.com/index.php/blog/msg/179</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/8707">https://xz.aliyun.com/t/8707</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/4154">https://xz.aliyun.com/t/4154</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/63">https://xz.aliyun.com/t/63</a></p>
+<h3 id="tls-with-dns-rebinding"><a href="#tls-with-dns-rebinding" class="headerlink" title="tls with dns rebinding"></a>tls with dns rebinding</h3><blockquote>
+<p>该手法是将ssrf+dns rebinding+tls session完美结合在一起的利用链，能够在不依赖其他漏洞（如CRLF）的情况下，攻击内网中的memcache、SMTP服务</p>
+</blockquote>
+<p>大概就是用https协议搞事，在不依赖crlf这类漏洞的情况下来打一些https协议直接冲不了的服务。其实没看太懂很原理的东西，似乎核心就在tls的Session ID，在RFC-5077可以看到Session ID支持的数据格式包括换行符等我们可以用来搞事的数据。而通过dns rebinding技术我们通过构造自己的恶意服务端这里的Session ID就是我们可控的。</p>
+<p>这套组合拳本身还蛮有意思的，可惜能操作的服务比较有限，可以参考下表，能打的几乎是些实战中没法太好利用的服务，略微鸡肋。<br><img src="/2022/05/04/ssrf%E7%9A%84%E6%B0%B4%E5%A5%BD%E6%B7%B1/image-20220502233651665.png" alt="image-20220502233651665"><br>由于redis遇到\0x00会quit而tls协议默认会带这些字符所以打不了redis。</p>
+<h4 id="参考-5"><a href="#参考-5" class="headerlink" title="参考"></a>参考</h4><p><a target="_blank" rel="noopener" href="https://security.tencent.com/index.php/blog/msg/179">https://security.tencent.com/index.php/blog/msg/179</a></p>
+<p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/8351">https://xz.aliyun.com/t/8351</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/iamstudy/articles/13th_cuit_game_wp_web300_ssrf.html">https://www.cnblogs.com/iamstudy/articles/13th_cuit_game_wp_web300_ssrf.html</a></p>
+<h3 id="xip-io"><a href="#xip-io" class="headerlink" title="xip.io"></a>xip.io</h3><p>遇到ip黑名单的情景可以用，因为xip.io是可以指向任意ip的域名</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">http://xxx.192.168.0.1.xip.io/ == http://192.168.0.1</span><br></pre></td></tr></table></figure>
+
+<h3 id="短网址"><a href="#短网址" class="headerlink" title="短网址"></a>短网址</h3><p><a target="_blank" rel="noopener" href="http://tool.chinaz.com/tools/dwz.aspx">http://tool.chinaz.com/tools/dwz.aspx</a></p>
+<p>这个案例就有点意思<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/7866">https://xz.aliyun.com/t/7866</a></p>
+<h3 id="ip进制"><a href="#ip进制" class="headerlink" title="ip进制"></a>ip进制</h3><blockquote>
+<p>127.0.0.1</p>
+<p>八进制：0177.0.0.1</p>
+<p>十六进制：0x7f.0.0.1</p>
+<p>十进制：2130706433</p>
+<p>混合编码:0177.0.0.0x1</p>
+<p>又例如</p>
+<p>012.0.0.1 、 0xa.0.0.1 、 167772161 、 10.1 、 0xA000001 实际上都请求的是10.0.0.1</p>
+</blockquote>
+<h3 id="特殊符号"><a href="#特殊符号" class="headerlink" title="特殊符号"></a>特殊符号</h3><ul>
+<li><p><strong>@符号</strong> <a target="_blank" rel="noopener" href="http://8.8.8.8@127.0.0.1、http//127.0.0.1#8.8.8.8%E9%83%BD%E6%98%AF%E8%AE%BF%E9%97%AEhttp://127.0.0.1%EF%BC%8C%E6%AF%94%E5%A6%82%E9%99%90%E5%AE%9A%E4%BA%86%E5%8F%AA%E8%83%BD%E8%AF%B7%E6%B1%82%E7%99%BD%E5%90%8D%E5%8D%95http://www.xxx.com%E5%BC%80%E5%A4%B4%E7%9A%84url%EF%BC%8C%E6%88%91%E4%BB%AC%E5%8F%AF%E4%BB%A5%E7%94%A8http://www.xxx.com@www.evil.com%E6%9D%A5%E7%BB%95%E8%BF%87">http://8.8.8.8@127.0.0.1、http://127.0.0.1#8.8.8.8都是访问http://127.0.0.1，比如限定了只能请求白名单http://www.xxx.com开头的url，我们可以用http://www.xxx.com@www.evil.com来绕过</a></p>
+</li>
+<li><p><strong>[::]</strong> http:&#x2F;&#x2F;[::]:80&#x2F;就是访问<a target="_blank" rel="noopener" href="http://localhost/">http://localhost</a></p>
+</li>
+<li><p><strong>句号</strong> 127。0。0。1等价于 127.0.0.1</p>
+</li>
+<li><p><strong>Enclosed alphanumerics</strong> ⓔⓧⓐⓜⓟⓛⓔ.ⓒⓞⓜ 等价于 example.com</p>
+</li>
+</ul>
+<h3 id="用dns解析"><a href="#用dns解析" class="headerlink" title="用dns解析"></a>用dns解析</h3><p>比如禁用了127.0.0.1，可以试试用我们自己的域名绑定127.0.0.1</p>
+<h3 id="把blind-ssrf升级成有回显ssrf"><a href="#把blind-ssrf升级成有回显ssrf" class="headerlink" title="把blind ssrf升级成有回显ssrf"></a>把blind ssrf升级成有回显ssrf</h3><p>结合具体的功能点有机会把blind ssrf升级出回显，比如这个情景中<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/6987">https://xz.aliyun.com/t/6987</a>利用断点续传遇到跳转会缓存部分内容的特性配合30x跳转升级了无回显ssrf</p>
+<h3 id="特殊地址"><a href="#特殊地址" class="headerlink" title="特殊地址"></a>特殊地址</h3><p>如果是本地127.0.0.1这个地址,那么下面的地址都会指向这里</p>
+<ul>
+<li><p>127.0.0.0&#x2F;8</p>
+</li>
+<li><p>0.0.0.0&#x2F;8</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="http://0.0.0.0/">http://0/</a></p>
+</li>
+</ul>
+<h3 id="xss到ssrf"><a href="#xss到ssrf" class="headerlink" title="xss到ssrf"></a>xss到ssrf</h3><p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/127">https://xz.aliyun.com/t/127</a></p>
+<h3 id="子域名或目录"><a href="#子域名或目录" class="headerlink" title="子域名或目录"></a>子域名或目录</h3><p>遇到某些开发写得有问题的正则，有可能用子域名或者目录来绕过</p>
+<blockquote>
+<p>victime.com.attacker.com或attacker.com&#x2F;victim.com</p>
+</blockquote>
+<h3 id="ipv6"><a href="#ipv6" class="headerlink" title="ipv6"></a>ipv6</h3><p>有可能没有对ipv6格式做正确的防护措施，参考<a target="_blank" rel="noopener" href="https://security.tencent.com/index.php/blog/msg/179">https://security.tencent.com/index.php/blog/msg/179</a></p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/05/03/%E4%B8%80%E6%AC%A1%E4%BD%8E%E7%89%88%E6%9C%ACxstream%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%88%A9%E7%94%A8%E8%AE%B0%E5%BD%95/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-05-04 22:10:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#ssrf%E7%9A%84%E6%B0%B4%E5%A5%BD%E6%B7%B1"><span class="toc-text">ssrf的水好深</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#gopher%E5%8D%8F%E8%AE%AE"><span class="toc-text">gopher协议</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%BC%E5%BC%8F%E8%AF%A6%E8%A7%A3"><span class="toc-text">格式详解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%95%B0%E6%8D%AE%E5%8C%85%E6%9E%84%E9%80%A0"><span class="toc-text">数据包构造</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B1%80%E9%99%90"><span class="toc-text">局限</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%88%A9%E7%94%A8%E5%B7%A5%E5%85%B7"><span class="toc-text">利用工具</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Tomcat"><span class="toc-text">Tomcat</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#MySQL-PostgreSQL-FastCGI-Memcached-Redis-Zabbix-SMTP"><span class="toc-text">MySQL,PostgreSQL,FastCGI,Memcached,Redis,Zabbix,SMTP</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#redis-auth"><span class="toc-text">redis auth</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#mysql"><span class="toc-text">mysql</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%82%E8%80%83"><span class="toc-text">参考</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ssrf%E8%A7%A6%E5%8F%91%E7%82%B9"><span class="toc-text">ssrf触发点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#php"><span class="toc-text">php</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%87%BD%E6%95%B0"><span class="toc-text">函数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%80%E4%BA%9B%E5%B0%8F%E7%9F%A5%E8%AF%86"><span class="toc-text">一些小知识</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#python"><span class="toc-text">python</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%80%E4%BA%9B%E5%B0%8F%E7%9F%A5%E8%AF%86-1"><span class="toc-text">一些小知识</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#java"><span class="toc-text">java</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%80%E4%BA%9B%E5%B0%8F%E7%9F%A5%E8%AF%86-2"><span class="toc-text">一些小知识</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%82%E8%80%83-1"><span class="toc-text">参考</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%94%BB%E5%87%BB%E9%9D%A2"><span class="toc-text">攻击面</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96"><span class="toc-text">文件读取</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%82%E8%80%83-2"><span class="toc-text">参考</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ftp"><span class="toc-text">ftp</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#memcache"><span class="toc-text">memcache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#redis"><span class="toc-text">redis</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%8F%E7%9F%A5%E8%AF%86"><span class="toc-text">小知识</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BB%8F%E5%85%B8%E6%A1%88%E4%BE%8B"><span class="toc-text">经典案例</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#mysql-1"><span class="toc-text">mysql</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#docker"><span class="toc-text">docker</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#phar"><span class="toc-text">phar</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#fastcgi"><span class="toc-text">fastcgi</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#tomcat"><span class="toc-text">tomcat</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#dubbo"><span class="toc-text">dubbo</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#S2"><span class="toc-text">S2</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#jboss"><span class="toc-text">jboss</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Weblogic"><span class="toc-text">Weblogic</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#axis"><span class="toc-text">axis</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#proxylogon"><span class="toc-text">proxylogon</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#proxyshell"><span class="toc-text">proxyshell</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ntlm-relay"><span class="toc-text">ntlm relay</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB%E5%AE%9E%E7%8E%B0%E8%B6%8A%E6%9D%83"><span class="toc-text">文件包含实现越权</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E5%90%88%E7%99%BD%E7%9B%92%E5%AE%A1%E8%AE%A1getshell"><span class="toc-text">结合白盒审计getshell</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8B%BF%E7%9C%9F%E5%AE%9Eip"><span class="toc-text">拿真实ip</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#socks4%E4%BB%A3%E7%90%86"><span class="toc-text">socks4代理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%91%E6%B8%97%E9%80%8F%E6%83%85%E6%99%AF"><span class="toc-text">云渗透情景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ssrf-chains"><span class="toc-text">ssrf chains</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%95%E8%BF%87"><span class="toc-text">绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#30x%E8%B7%B3%E8%BD%AC"><span class="toc-text">30x跳转</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#URL%E8%A7%A3%E6%9E%90%E5%B7%AE%E5%BC%82%E7%BB%95%E8%BF%87"><span class="toc-text">URL解析差异绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%82%E8%80%83-3"><span class="toc-text">参考</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#dns-rebinding"><span class="toc-text">dns rebinding</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%82%E8%80%83-4"><span class="toc-text">参考</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#tls-with-dns-rebinding"><span class="toc-text">tls with dns rebinding</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%82%E8%80%83-5"><span class="toc-text">参考</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#xip-io"><span class="toc-text">xip.io</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9F%AD%E7%BD%91%E5%9D%80"><span class="toc-text">短网址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ip%E8%BF%9B%E5%88%B6"><span class="toc-text">ip进制</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%B9%E6%AE%8A%E7%AC%A6%E5%8F%B7"><span class="toc-text">特殊符号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%94%A8dns%E8%A7%A3%E6%9E%90"><span class="toc-text">用dns解析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8A%8Ablind-ssrf%E5%8D%87%E7%BA%A7%E6%88%90%E6%9C%89%E5%9B%9E%E6%98%BEssrf"><span class="toc-text">把blind ssrf升级成有回显ssrf</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%B9%E6%AE%8A%E5%9C%B0%E5%9D%80"><span class="toc-text">特殊地址</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#xss%E5%88%B0ssrf"><span class="toc-text">xss到ssrf</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AD%90%E5%9F%9F%E5%90%8D%E6%88%96%E7%9B%AE%E5%BD%95"><span class="toc-text">子域名或目录</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ipv6"><span class="toc-text">ipv6</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + ssrf%E7%9A%84%E6%B0%B4%E5%A5%BD%E6%B7%B1 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F05%2F04%2Fssrf%25E7%259A%2584%25E6%25B0%25B4%25E5%25A5%25BD%25E6%25B7%25B1%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/05/04/ssrf%E7%9A%84%E6%B0%B4%E5%A5%BD%E6%B7%B1/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
